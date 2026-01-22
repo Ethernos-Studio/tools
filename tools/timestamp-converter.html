@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>UNIX时间戳转换 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 200px;
+            padding: 4px 6px;
+            border: 1px solid #666666;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .btn {
+            background-color: #006699;
+            color: #ffffff;
+            padding: 6px 12px;
+            border: 1px solid #004466;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            margin-right: 5px;
+        }
+        
+        .btn:hover {
+            background-color: #0088cc;
+        }
+        
+        .btn-secondary {
+            background-color: #666666;
+            border-color: #444444;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #888888;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 3px solid #006699;
+            font-size: 11px;
+        }
+        
+        .timestamp-info {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+        }
+        
+        .timestamp-label {
+            font-weight: bold;
+            color: #006699;
+            display: inline-block;
+            width: 120px;
+        }
+        
+        .current-time {
+            background-color: #e8f4f8;
+            border: 1px solid #006699;
+            padding: 10px;
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>UNIX时间戳转换</h2>
+                    
+                    <div class="current-time" id="currentTime">
+                        当前时间加载中...
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="timestampInput">UNIX时间戳（秒）：</label>
+                        <input type="number" id="timestampInput" placeholder="请输入UNIX时间戳...">
+                    </div>
+                    
+                    <button class="btn" onclick="convertTimestamp()">转换时间戳</button>
+                    <button class="btn btn-secondary" onclick="getCurrentTimestamp()">获取当前时间戳</button>
+                    <button class="btn btn-secondary" onclick="clearResults()">清除结果</button>
+                    
+                    <div class="result" id="timestampResult" style="display: none;">
+                        <strong>转换结果：</strong>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">北京时间：</span>
+                            <span id="beijingTime"></span>
+                        </div>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">UTC时间：</span>
+                            <span id="utcTime"></span>
+                        </div>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">时间戳（秒）：</span>
+                            <span id="timestampSeconds"></span>
+                        </div>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">时间戳（毫秒）：</span>
+                            <span id="timestampMillis"></span>
+                        </div>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">星期：</span>
+                            <span id="dayOfWeek"></span>
+                        </div>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">是一年中的第几天：</span>
+                            <span id="dayOfYear"></span>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group" style="margin-top: 20px;">
+                        <label for="dateInput">日期时间转换：</label>
+                        <input type="datetime-local" id="dateInput">
+                    </div>
+                    
+                    <button class="btn" onclick="convertDateToTimestamp()">日期转时间戳</button>
+                    
+                    <div class="result" id="dateResult" style="display: none;">
+                        <strong>日期转换结果：</strong>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">UNIX时间戳（秒）：</span>
+                            <span id="dateTimestampSeconds"></span>
+                        </div>
+                        <div class="timestamp-info">
+                            <span class="timestamp-label">UNIX时间戳（毫秒）：</span>
+                            <span id="dateTimestampMillis"></span>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        // 更新当前时间
+        function updateCurrentTime() {
+            const now = new Date();
+            const beijingTime = now.toLocaleString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                weekday: 'long'
+            });
+            
+            const utcTime = now.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            const timestampSeconds = Math.floor(now.getTime() / 1000);
+            const timestampMillis = now.getTime();
+            
+            document.getElementById('currentTime').innerHTML = `
+                北京时间：${beijingTime} | 
+                UTC时间：${utcTime} | 
+                UNIX时间戳（秒）：${timestampSeconds} | 
+                UNIX时间戳（毫秒）：${timestampMillis}
+            `;
+        }
+        
+        function convertTimestamp() {
+            const timestampInput = document.getElementById('timestampInput').value.trim();
+            
+            if (timestampInput === '') {
+                alert('请输入UNIX时间戳！');
+                return;
+            }
+            
+            const timestamp = parseInt(timestampInput);
+            if (isNaN(timestamp)) {
+                alert('请输入有效的时间戳！');
+                return;
+            }
+            
+            // 判断是秒还是毫秒
+            let date;
+            if (timestamp > 9999999999) { // 大于10位数字，认为是毫秒
+                date = new Date(timestamp);
+            } else { // 10位或更少，认为是秒
+                date = new Date(timestamp * 1000);
+            }
+            
+            if (isNaN(date.getTime())) {
+                alert('无效的时间戳！');
+                return;
+            }
+            
+            const beijingTime = date.toLocaleString('zh-CN', {
+                timeZone: 'Asia/Shanghai',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                weekday: 'long'
+            });
+            
+            const utcTime = date.toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+            const timestampSeconds = Math.floor(date.getTime() / 1000);
+            const timestampMillis = date.getTime();
+            const dayOfWeek = date.toLocaleDateString('zh-CN', { weekday: 'long' });
+            
+            // 计算是一年中的第几天
+            const start = new Date(date.getFullYear(), 0, 0);
+            const diff = date - start;
+            const oneDay = 1000 * 60 * 60 * 24;
+            const dayOfYear = Math.floor(diff / oneDay);
+            
+            document.getElementById('beijingTime').textContent = beijingTime;
+            document.getElementById('utcTime').textContent = utcTime;
+            document.getElementById('timestampSeconds').textContent = timestampSeconds;
+            document.getElementById('timestampMillis').textContent = timestampMillis;
+            document.getElementById('dayOfWeek').textContent = dayOfWeek;
+            document.getElementById('dayOfYear').textContent = dayOfYear + '天';
+            
+            document.getElementById('timestampResult').style.display = 'block';
+        }
+        
+        function getCurrentTimestamp() {
+            const now = new Date();
+            const timestampSeconds = Math.floor(now.getTime() / 1000);
+            document.getElementById('timestampInput').value = timestampSeconds;
+            convertTimestamp();
+        }
+        
+        function convertDateToTimestamp() {
+            const dateInput = document.getElementById('dateInput').value;
+            
+            if (dateInput === '') {
+                alert('请选择日期时间！');
+                return;
+            }
+            
+            const date = new Date(dateInput);
+            if (isNaN(date.getTime())) {
+                alert('无效的日期时间！');
+                return;
+            }
+            
+            const timestampSeconds = Math.floor(date.getTime() / 1000);
+            const timestampMillis = date.getTime();
+            
+            document.getElementById('dateTimestampSeconds').textContent = timestampSeconds;
+            document.getElementById('dateTimestampMillis').textContent = timestampMillis;
+            
+            document.getElementById('dateResult').style.display = 'block';
+        }
+        
+        function clearResults() {
+            document.getElementById('timestampResult').style.display = 'none';
+            document.getElementById('dateResult').style.display = 'none';
+            document.getElementById('timestampInput').value = '';
+            document.getElementById('dateInput').value = '';
+        }
+        
+        // 初始化
+        updateCurrentTime();
+        setInterval(updateCurrentTime, 1000); // 每秒更新一次
+        
+        // 设置默认值为当前时间
+        const now = new Date();
+        const localDateTime = now.toISOString().slice(0, 16);
+        document.getElementById('dateInput').value = localDateTime;
+        
+        loadSidebar();
+    </script>
+</body>
+</html>

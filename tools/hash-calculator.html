@@ -52,6 +52,7 @@
             margin-bottom: 10px;
         }
         
+        .form-group label {
             display: block;
             margin-bottom: 3px;
             font-weight: bold;
@@ -305,32 +306,6 @@
         function clearResults() {
             document.getElementById('results').style.display = 'none';
             document.getElementById('inputText').value = '';
-        }
-        
-        // 如果浏览器支持Web Crypto API，使用更安全的实现
-        if (window.crypto && window.crypto.subtle) {
-            async function calculateRealHash(text, algorithm) {
-                const encoder = new TextEncoder();
-                const data = encoder.encode(text);
-                
-                let algoName = algorithm.toLowerCase().replace('-', '');
-                if (algoName === 'md5') {
-                    // MD5不被Web Crypto API支持，使用简化版本
-                    return simpleHash(text, algorithm);
-                }
-                
-                try {
-                    const hashBuffer = await crypto.subtle.digest(algoName.toUpperCase(), data);
-                    const hashArray = Array.from(new Uint8Array(hashBuffer));
-                    const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-                    return hashHex;
-                } catch (error) {
-                    // 如果Web Crypto API失败，回退到简化版本
-                    return simpleHash(text, algorithm);
-                }
-            }
-            
-            window.calculateRealHash = calculateRealHash;
         }
         
         loadSidebar();

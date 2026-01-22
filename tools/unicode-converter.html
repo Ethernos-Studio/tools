@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Unicode批量转换 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 4px 6px;
+            border: 1px solid #666666;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .form-group textarea {
+            height: 80px;
+            resize: vertical;
+        }
+        
+        .btn {
+            background-color: #006699;
+            color: #ffffff;
+            padding: 6px 12px;
+            border: 1px solid #004466;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            margin-right: 5px;
+        }
+        
+        .btn:hover {
+            background-color: #0088cc;
+        }
+        
+        .btn-secondary {
+            background-color: #666666;
+            border-color: #444444;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #888888;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 3px solid #006699;
+            font-size: 11px;
+        }
+        
+        .unicode-result {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+            font-family: monospace;
+            font-size: 10px;
+            word-break: break-all;
+        }
+        
+        .unicode-label {
+            font-weight: bold;
+            color: #006699;
+            display: inline-block;
+            width: 120px;
+        }
+        
+        .conversion-group {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #dddddd;
+        }
+        
+        .unicode-info {
+            margin: 10px 0;
+            padding: 8px;
+            background-color: #e8f4f8;
+            border: 1px solid #006699;
+            font-size: 10px;
+        }
+        
+        .batch-input {
+            height: 120px !important;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>Unicode批量转换</h2>
+                    
+                    <div class="conversion-group">
+                        <div class="form-group">
+                            <label for="textInput">输入文本：</label>
+                            <textarea id="textInput" class="batch-input" placeholder="请输入要转换的文本，支持中英文混合..."></textarea>
+                        </div>
+                        
+                        <button class="btn" onclick="textToUnicode()">文本转Unicode</button>
+                        <button class="btn" onclick="textToUtf8()">文本转UTF-8</button>
+                        <button class="btn" onclick="textToUtf16()">文本转UTF-16</button>
+                        <button class="btn btn-secondary" onclick="clearText()">清除</button>
+                    </div>
+                    
+                    <div class="conversion-group">
+                        <div class="form-group">
+                            <label for="unicodeInput">输入Unicode编码（用空格或逗号分隔）：</label>
+                            <textarea id="unicodeInput" class="batch-input" placeholder="例如：\u4f60\u597d\u4e16\u754c 或 U+4F60 U+597D U+4E16 U+754C"></textarea>
+                        </div>
+                        
+                        <button class="btn" onclick="unicodeToText()">Unicode转文本</button>
+                        <button class="btn btn-secondary" onclick="clearUnicode()">清除</button>
+                    </div>
+                    
+                    <div class="conversion-group">
+                        <div class="form-group">
+                            <label for="utf8Input">输入UTF-8编码（用空格分隔）：</label>
+                            <textarea id="utf8Input" class="batch-input" placeholder="例如：E4 BD A0 E5 A5 BD E4 B8 96 E7 95 8C"></textarea>
+                        </div>
+                        
+                        <button class="btn" onclick="utf8ToText()">UTF-8转文本</button>
+                        <button class="btn btn-secondary" onclick="clearUtf8()">清除</button>
+                    </div>
+                    
+                    <div class="result" id="conversionResults" style="display: none;">
+                        <strong>转换结果：</strong>
+                        <div id="unicodeResults"></div>
+                    </div>
+                    
+                    <div class="unicode-info">
+                        <strong>编码说明：</strong><br>
+                        <strong>Unicode:</strong> 统一字符编码标准，为每个字符分配唯一的码点<br>
+                        <strong>UTF-8:</strong> 可变长度编码，1-4字节表示一个字符，兼容ASCII<br>
+                        <strong>UTF-16:</strong> 可变长度编码，2或4字节表示一个字符<br>
+                        <strong>格式说明：</strong> Unicode可以用 \uXXXX 或 U+XXXX 格式表示
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        // 文本转Unicode编码点
+        function textToUnicode() {
+            const text = document.getElementById('textInput').value;
+            if (text === '') {
+                alert('请输入要转换的文本！');
+                return;
+            }
+            
+            let unicodeCodes = [];
+            for (let i = 0; i < text.length; i++) {
+                const code = text.codePointAt(i);
+                if (code > 0xFFFF) {
+                    // 处理代理对（4字节字符）
+                    i++; // 跳过代理对的第二部分
+                }
+                unicodeCodes.push('U+' + code.toString(16).toUpperCase().padStart(4, '0'));
+            }
+            
+            displayResult('Unicode编码', unicodeCodes.join(' '));
+        }
+        
+        // 文本转UTF-8编码
+        function textToUtf8() {
+            const text = document.getElementById('textInput').value;
+            if (text === '') {
+                alert('请输入要转换的文本！');
+                return;
+            }
+            
+            const utf8Bytes = [];
+            for (let i = 0; i < text.length; i++) {
+                const code = text.charCodeAt(i);
+                
+                if (code < 0x80) {
+                    // 1字节
+                    utf8Bytes.push(code.toString(16).toUpperCase().padStart(2, '0'));
+                } else if (code < 0x800) {
+                    // 2字节
+                    utf8Bytes.push(
+                        ((0xC0 | (code >> 6))).toString(16).toUpperCase().padStart(2, '0'),
+                        ((0x80 | (code & 0x3F))).toString(16).toUpperCase().padStart(2, '0')
+                    );
+                } else if (code < 0xD800 || code >= 0xE000) {
+                    // 3字节（非代理对）
+                    utf8Bytes.push(
+                        ((0xE0 | (code >> 12))).toString(16).toUpperCase().padStart(2, '0'),
+                        ((0x80 | ((code >> 6) & 0x3F))).toString(16).toUpperCase().padStart(2, '0'),
+                        ((0x80 | (code & 0x3F))).toString(16).toUpperCase().padStart(2, '0')
+                    );
+                } else {
+                    // 4字节（代理对）
+                    const high = code;
+                    const low = text.charCodeAt(i + 1);
+                    const codePoint = 0x10000 + (((high & 0x3FF) << 10) | (low & 0x3FF));
+                    
+                    utf8Bytes.push(
+                        ((0xF0 | (codePoint >> 18))).toString(16).toUpperCase().padStart(2, '0'),
+                        ((0x80 | ((codePoint >> 12) & 0x3F))).toString(16).toUpperCase().padStart(2, '0'),
+                        ((0x80 | ((codePoint >> 6) & 0x3F))).toString(16).toUpperCase().padStart(2, '0'),
+                        ((0x80 | (codePoint & 0x3F))).toString(16).toUpperCase().padStart(2, '0')
+                    );
+                    i++; // 跳过代理对的第二部分
+                }
+            }
+            
+            displayResult('UTF-8编码', utf8Bytes.join(' '));
+        }
+        
+        // 文本转UTF-16编码
+        function textToUtf16() {
+            const text = document.getElementById('textInput').value;
+            if (text === '') {
+                alert('请输入要转换的文本！');
+                return;
+            }
+            
+            let utf16Codes = [];
+            for (let i = 0; i < text.length; i++) {
+                const code = text.charCodeAt(i);
+                utf16Codes.push('0x' + code.toString(16).toUpperCase().padStart(4, '0'));
+            }
+            
+            displayResult('UTF-16编码', utf16Codes.join(' '));
+        }
+        
+        // Unicode转文本
+        function unicodeToText() {
+            const unicodeInput = document.getElementById('unicodeInput').value.trim();
+            if (unicodeInput === '') {
+                alert('请输入Unicode编码！');
+                return;
+            }
+            
+            // 解析Unicode编码
+            const unicodePattern = /(?:\\u|U\+)([0-9A-Fa-f]{4,6})/g;
+            const matches = unicodeInput.match(unicodePattern);
+            
+            if (!matches) {
+                alert('未找到有效的Unicode编码格式！\n请使用 \\uXXXX 或 U+XXXX 格式');
+                return;
+            }
+            
+            let text = '';
+            for (const match of matches) {
+                const hex = match.replace(/\\u|U\+/i, '');
+                const codePoint = parseInt(hex, 16);
+                text += String.fromCodePoint(codePoint);
+            }
+            
+            displayResult('文本', text);
+        }
+        
+        // UTF-8转文本
+        function utf8ToText() {
+            const utf8Input = document.getElementById('utf8Input').value.trim();
+            if (utf8Input === '') {
+                alert('请输入UTF-8编码！');
+                return;
+            }
+            
+            const hexBytes = utf8Input.split(/\s+/);
+            const bytes = [];
+            
+            // 验证并转换十六进制字符串为字节
+            for (const hex of hexBytes) {
+                if (!/^[0-9A-Fa-f]{2}$/.test(hex)) {
+                    alert(`无效的十六进制字节: ${hex}`);
+                    return;
+                }
+                bytes.push(parseInt(hex, 16));
+            }
+            
+            try {
+                // 创建Uint8Array并解码为文本
+                const uint8Array = new Uint8Array(bytes);
+                const text = new TextDecoder('utf-8').decode(uint8Array);
+                displayResult('文本', text);
+            } catch (error) {
+                alert('UTF-8解码失败：' + error.message);
+            }
+        }
+        
+        // 显示转换结果
+        function displayResult(type, result) {
+            const resultsDiv = document.getElementById('conversionResults');
+            const unicodeResultsDiv = document.getElementById('unicodeResults');
+            
+            unicodeResultsDiv.innerHTML = `
+                <div class="unicode-result">
+                    <span class="unicode-label">${type}:</span>
+                    <span>${result}</span>
+                </div>
+            `;
+            
+            resultsDiv.style.display = 'block';
+        }
+        
+        function clearText() {
+            document.getElementById('textInput').value = '';
+        }
+        
+        function clearUnicode() {
+            document.getElementById('unicodeInput').value = '';
+        }
+        
+        function clearUtf8() {
+            document.getElementById('utf8Input').value = '';
+        }
+        
+        // 为输入框添加回车键支持
+        document.getElementById('textInput').addEventListener('keydown', function(event) {
+            if (event.ctrlKey && event.key === 'Enter') {
+                textToUnicode();
+            }
+        });
+        
+        loadSidebar();
+    </script>
+</body>
+</html>

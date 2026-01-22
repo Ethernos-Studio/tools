@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>进制转换 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .form-group input,
+        .form-group select {
+            width: 200px;
+            padding: 4px 6px;
+            border: 1px solid #666666;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .btn {
+            background-color: #006699;
+            color: #ffffff;
+            padding: 6px 12px;
+            border: 1px solid #004466;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            margin-right: 5px;
+        }
+        
+        .btn:hover {
+            background-color: #0088cc;
+        }
+        
+        .btn-secondary {
+            background-color: #666666;
+            border-color: #444444;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #888888;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 3px solid #006699;
+            font-size: 11px;
+        }
+        
+        .base-result {
+            margin: 5px 0;
+            padding: 8px;
+            background-color: #ffffff;
+            border: 1px solid #cccccc;
+            font-family: monospace;
+            font-size: 10px;
+            word-break: break-all;
+        }
+        
+        .base-label {
+            font-weight: bold;
+            color: #006699;
+            display: inline-block;
+            width: 80px;
+        }
+        
+        .conversion-group {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #f9f9f9;
+            border: 1px solid #dddddd;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>进制转换</h2>
+                    
+                    <div class="conversion-group">
+                        <div class="form-group">
+                            <label for="inputNumber">输入数字：</label>
+                            <input type="text" id="inputNumber" placeholder="请输入要转换的数字...">
+                        </div>
+                        
+                        <div class="form-group">
+                            <label for="inputBase">当前进制：</label>
+                            <select id="inputBase">
+                                <option value="2">二进制 (Base 2)</option>
+                                <option value="8">八进制 (Base 8)</option>
+                                <option value="10" selected>十进制 (Base 10)</option>
+                                <option value="16">十六进制 (Base 16)</option>
+                                <option value="32">三十二进制 (Base 32)</option>
+                                <option value="36">三十六进制 (Base 36)</option>
+                                <option value="58">五十八进制 (Base 58)</option>
+                                <option value="62">六十二进制 (Base 62)</option>
+                                <option value="64">六十四进制 (Base 64)</option>
+                            </select>
+                        </div>
+                        
+                        <button class="btn" onclick="convertNumber()">转换</button>
+                        <button class="btn btn-secondary" onclick="clearResults()">清除</button>
+                    </div>
+                    
+                    <div class="result" id="conversionResults" style="display: none;">
+                        <strong>转换结果：</strong>
+                        <div id="baseResults"></div>
+                    </div>
+                    
+                    <div class="conversion-group">
+                        <h3>进制说明：</h3>
+                        <div style="font-size: 10px; line-height: 1.4;">
+                            <p><strong>二进制 (Base 2):</strong> 使用数字 0-1，计算机基础进制</p>
+                            <p><strong>八进制 (Base 8):</strong> 使用数字 0-7，早期计算机常用</p>
+                            <p><strong>十进制 (Base 10):</strong> 使用数字 0-9，人类日常使用的进制</p>
+                            <p><strong>十六进制 (Base 16):</strong> 使用数字 0-9 和字母 A-F，计算机编程常用</p>
+                            <p><strong>三十二进制 (Base 32):</strong> 使用数字 0-9 和字母 A-V</p>
+                            <p><strong>三十六进制 (Base 36):</strong> 使用数字 0-9 和字母 A-Z</p>
+                            <p><strong>五十八进制 (Base 58):</strong> 使用数字 1-9 和字母 A-H, J-N, P-Z, a-k, m-z（排除易混淆字符）</p>
+                            <p><strong>六十二进制 (Base 62):</strong> 使用数字 0-9 和字母 A-Z, a-z</p>
+                            <p><strong>六十四进制 (Base 64):</strong> 使用数字 0-9, 字母 A-Z, a-z 和符号 +/</p>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        // 进制转换字符集
+        const baseChars = {
+            2: '01',
+            8: '01234567',
+            10: '0123456789',
+            16: '0123456789ABCDEF',
+            32: 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567',
+            36: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+            58: '123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz',
+            62: '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz',
+            64: 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/'
+        };
+        
+        // 从任意进制转换为十进制
+        function fromBase(str, base) {
+            if (base < 2 || base > 64) return null;
+            const chars = baseChars[base] || baseChars[10].substring(0, base);
+            let result = 0;
+            const strUpper = str.toUpperCase();
+            
+            for (let i = 0; i < strUpper.length; i++) {
+                const char = strUpper[i];
+                const value = chars.indexOf(char);
+                if (value === -1) return null; // 无效字符
+                result = result * base + value;
+            }
+            
+            return result;
+        }
+        
+        // 从十进制转换为任意进制
+        function toBase(num, base) {
+            if (base < 2 || base > 64 || num < 0) return '';
+            if (num === 0) return '0';
+            
+            const chars = baseChars[base] || baseChars[10].substring(0, base);
+            let result = '';
+            let n = num;
+            
+            while (n > 0) {
+                result = chars[n % base] + result;
+                n = Math.floor(n / base);
+            }
+            
+            return result;
+        }
+        
+        function convertNumber() {
+            const inputNumber = document.getElementById('inputNumber').value.trim();
+            const inputBase = parseInt(document.getElementById('inputBase').value);
+            
+            if (inputNumber === '') {
+                alert('请输入要转换的数字！');
+                return;
+            }
+            
+            // 转换为十进制
+            const decimalValue = fromBase(inputNumber, inputBase);
+            if (decimalValue === null) {
+                alert('输入的数字格式不正确！');
+                return;
+            }
+            
+            // 转换为各种进制
+            const results = {
+                '二进制': toBase(decimalValue, 2),
+                '八进制': toBase(decimalValue, 8),
+                '十进制': decimalValue.toString(),
+                '十六进制': toBase(decimalValue, 16),
+                '三十二进制': toBase(decimalValue, 32),
+                '三十六进制': toBase(decimalValue, 36),
+                '五十八进制': toBase(decimalValue, 58),
+                '六十二进制': toBase(decimalValue, 62),
+                '六十四进制': toBase(decimalValue, 64)
+            };
+            
+            // 显示结果
+            let html = '';
+            for (const [baseName, value] of Object.entries(results)) {
+                if (value) { // 只显示非空结果
+                    html += `
+                        <div class="base-result">
+                            <span class="base-label">${baseName}:</span>
+                            <span>${value}</span>
+                        </div>
+                    `;
+                }
+            }
+            
+            document.getElementById('baseResults').innerHTML = html;
+            document.getElementById('conversionResults').style.display = 'block';
+        }
+        
+        function clearResults() {
+            document.getElementById('conversionResults').style.display = 'none';
+            document.getElementById('inputNumber').value = '';
+        }
+        
+        // 为输入框添加回车键支持
+        document.getElementById('inputNumber').addEventListener('keypress', function(event) {
+            if (event.key === 'Enter') {
+                convertNumber();
+            }
+        });
+        
+        loadSidebar();
+    </script>
+</body>
+</html>
