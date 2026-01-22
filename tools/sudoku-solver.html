@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数独求解器 - Ethernos Tools</title>
+    <link rel="stylesheet" href="../page.css">
+    <style>
+        .sudoku-grid {
+            display: inline-block;
+            border: 3px solid #333;
+            margin: 20px 0;
+        }
+        
+        .sudoku-row {
+            display: flex;
+        }
+        
+        .sudoku-cell {
+            width: 40px;
+            height: 40px;
+            border: 1px solid #999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            font-weight: bold;
+            background-color: white;
+        }
+        
+        .sudoku-cell input {
+            width: 100%;
+            height: 100%;
+            border: none;
+            text-align: center;
+            font-size: 18px;
+            font-weight: bold;
+            background: transparent;
+        }
+        
+        .sudoku-cell input:focus {
+            outline: 2px solid #006699;
+            background-color: #f0f8ff;
+        }
+        
+        /* 3x3 区块边界 */
+        .sudoku-cell:nth-child(3n) {
+            border-right: 3px solid #333;
+        }
+        
+        .sudoku-row:nth-child(3n) .sudoku-cell {
+            border-bottom: 3px solid #333;
+        }
+        
+        .sudoku-cell.fixed {
+            background-color: #e8e8e8;
+            color: #333;
+        }
+        
+        .sudoku-cell.solution {
+            background-color: #e8f5e8;
+            color: #006600;
+        }
+        
+        .sudoku-cell.error {
+            background-color: #ffe8e8;
+            color: #cc0000;
+        }
+        
+        .sudoku-controls {
+            margin: 20px 0;
+        }
+        
+        .sudoku-examples {
+            margin-top: 20px;
+        }
+        
+        .example-buttons {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 10px;
+        }
+        
+        .example-buttons button {
+            padding: 5px 10px;
+            font-size: 11px;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0" style="width: 100%; height: 100%;">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="main-title">
+                    <h1>数独求解器</h1>
+                    <p>输入数独谜题，自动求解并验证答案</p>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>数独网格</h2>
+                    <div class="sudoku-grid" id="sudokuGrid">
+                        <!-- 动态生成的数独网格 -->
+                    </div>
+                    
+                    <div class="sudoku-controls">
+                        <button class="btn" onclick="solveSudoku()">求解数独</button>
+                        <button class="btn btn-secondary" onclick="clearGrid()">清空网格</button>
+                        <button class="btn btn-secondary" onclick="validateGrid()">验证输入</button>
+                    </div>
+                    
+                    <div id="sudokuResult" class="result" style="display: none;">
+                        <h3>求解结果：</h3>
+                        <div id="sudokuDetails"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-container sudoku-examples">
+                    <h2>示例谜题</h2>
+                    <p>选择预设的数独谜题进行练习：</p>
+                    <div class="example-buttons">
+                        <button class="btn" onclick="loadExample(1)">简单</button>
+                        <button class="btn" onclick="loadExample(2)">中等</button>
+                        <button class="btn" onclick="loadExample(3)">困难</button>
+                        <button class="btn" onclick="loadExample(4)">专家</button>
+                        <button class="btn" onclick="loadEmptyGrid()">空白</button>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>数独规则</h2>
+                    <p><strong>基本规则：</strong></p>
+                    <ul>
+                        <li>在9×9的网格中填入数字1-9</li>
+                        <li>每行必须包含数字1-9，不能重复</li>
+                        <li>每列必须包含数字1-9，不能重复</li>
+                        <li>每个3×3的小宫格必须包含数字1-9，不能重复</li>
+                    </ul>
+                    <p><strong>求解技巧：</strong></p>
+                    <ul>
+                        <li>唯一候选数法：找出某个格子唯一可能的数字</li>
+                        <li>排除法：根据行、列、宫格排除不可能的数字</li>
+                        <li>回溯法：尝试填入数字，发现矛盾时回退</li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '../bar.html', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+        
+        // 数独网格数据
+        let sudokuGrid = [];
+        let originalGrid = [];
+        
+        // 初始化数独网格
+        function initializeGrid() {
+            sudokuGrid = Array(9).fill().map(() => Array(9).fill(0));
+            originalGrid = Array(9).fill().map(() => Array(9).fill(0));
+            createGridHTML();
+        }
+        
+        // 创建网格HTML
+        function createGridHTML() {
+            const gridContainer = document.getElementById('sudokuGrid');
+            gridContainer.innerHTML = '';
+            
+            for (let row = 0; row < 9; row++) {
+                const rowDiv = document.createElement('div');
+                rowDiv.className = 'sudoku-row';
+                
+                for (let col = 0; col < 9; col++) {
+                    const cellDiv = document.createElement('div');
+                    cellDiv.className = 'sudoku-cell';
+                    cellDiv.id = `cell-${row}-${col}`;
+                    
+                    const input = document.createElement('input');
+                    input.type = 'text';
+                    input.maxLength = 1;
+                    input.value = sudokuGrid[row][col] === 0 ? '' : sudokuGrid[row][col];
+                    
+                    // 添加事件监听器
+                    input.addEventListener('input', function() {
+                        const value = this.value;
+                        if (value === '' || (value >= '1' && value <= '9')) {
+                            sudokuGrid[row][col] = value === '' ? 0 : parseInt(value);
+                            this.className = '';
+                        } else {
+                            this.value = '';
+                            sudokuGrid[row][col] = 0;
+                        }
+                    });
+                    
+                    cellDiv.appendChild(input);
+                    rowDiv.appendChild(cellDiv);
+                }
+                
+                gridContainer.appendChild(rowDiv);
+            }
+        }
+        
+        // 检查数字是否在行中有效
+        function isValidInRow(grid, row, num) {
+            for (let col = 0; col < 9; col++) {
+                if (grid[row][col] === num) return false;
+            }
+            return true;
+        }
+        
+        // 检查数字是否在列中有效
+        function isValidInCol(grid, col, num) {
+            for (let row = 0; row < 9; row++) {
+                if (grid[row][col] === num) return false;
+            }
+            return true;
+        }
+        
+        // 检查数字是否在3x3宫格中有效
+        function isValidInBox(grid, row, col, num) {
+            const boxRow = Math.floor(row / 3) * 3;
+            const boxCol = Math.floor(col / 3) * 3;
+            
+            for (let i = boxRow; i < boxRow + 3; i++) {
+                for (let j = boxCol; j < boxCol + 3; j++) {
+                    if (grid[i][j] === num) return false;
+                }
+            }
+            return true;
+        }
+        
+        // 检查数字是否可以在指定位置放置
+        function isValidPlacement(grid, row, col, num) {
+            return isValidInRow(grid, row, num) &&
+                   isValidInCol(grid, col, num) &&
+                   isValidInBox(grid, row, col, num);
+        }
+        
+        // 找到下一个空位置
+        function findEmptyCell(grid) {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (grid[row][col] === 0) {
+                        return [row, col];
+                    }
+                }
+            }
+            return null;
+        }
+        
+        // 使用回溯法求解数独
+        function solveSudokuGrid(grid) {
+            const empty = findEmptyCell(grid);
+            if (!empty) return true; // 没有空位置，求解完成
+            
+            const [row, col] = empty;
+            
+            for (let num = 1; num <= 9; num++) {
+                if (isValidPlacement(grid, row, col, num)) {
+                    grid[row][col] = num;
+                    
+                    if (solveSudokuGrid(grid)) {
+                        return true;
+                    }
+                    
+                    grid[row][col] = 0; // 回溯
+                }
+            }
+            
+            return false;
+        }
+        
+        // 验证网格是否有效
+        function validateGrid() {
+            let errors = [];
+            
+            // 检查每个已填入的数字
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const num = sudokuGrid[row][col];
+                    if (num !== 0) {
+                        // 临时移除该数字以检查有效性
+                        sudokuGrid[row][col] = 0;
+                        if (!isValidPlacement(sudokuGrid, row, col, num)) {
+                            errors.push(`第${row + 1}行第${col + 1}列的数字${num}无效`);
+                        }
+                        sudokuGrid[row][col] = num;
+                    }
+                }
+            }
+            
+            // 高亮错误位置
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const cell = document.getElementById(`cell-${row}-${col}`);
+                    const num = sudokuGrid[row][col];
+                    cell.className = 'sudoku-cell';
+                    
+                    if (num !== 0) {
+                        sudokuGrid[row][col] = 0;
+                        if (!isValidPlacement(sudokuGrid, row, col, num)) {
+                            cell.classList.add('error');
+                        }
+                        sudokuGrid[row][col] = num;
+                    }
+                }
+            }
+            
+            if (errors.length === 0) {
+                alert('当前输入有效！');
+            } else {
+                alert('发现错误：\n' + errors.join('\n'));
+            }
+        }
+        
+        // 求解数独
+        function solveSudoku() {
+            // 保存原始网格
+            originalGrid = sudokuGrid.map(row => [...row]);
+            
+            // 验证输入是否有效
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const num = sudokuGrid[row][col];
+                    if (num !== 0) {
+                        sudokuGrid[row][col] = 0;
+                        if (!isValidPlacement(sudokuGrid, row, col, num)) {
+                            alert(`第${row + 1}行第${col + 1}列的数字${num}与现有数字冲突`);
+                            sudokuGrid[row][col] = num;
+                            return;
+                        }
+                        sudokuGrid[row][col] = num;
+                    }
+                }
+            }
+            
+            // 求解
+            if (solveSudokuGrid(sudokuGrid)) {
+                // 更新显示
+                for (let row = 0; row < 9; row++) {
+                    for (let col = 0; col < 9; col++) {
+                        const cell = document.getElementById(`cell-${row}-${col}`);
+                        const input = cell.querySelector('input');
+                        input.value = sudokuGrid[row][col];
+                        
+                        // 标记解出的数字
+                        if (originalGrid[row][col] === 0) {
+                            cell.classList.add('solution');
+                        }
+                    }
+                }
+                
+                document.getElementById('sudokuDetails').innerHTML = '<p><strong>求解成功！</strong> 绿色显示的数字是求解结果。</p>';
+                document.getElementById('sudokuResult').style.display = 'block';
+            } else {
+                document.getElementById('sudokuDetails').innerHTML = '<p><strong>求解失败！</strong> 该数独无解。</p>';
+                document.getElementById('sudokuResult').style.display = 'block';
+            }
+        }
+        
+        // 清空网格
+        function clearGrid() {
+            initializeGrid();
+            document.getElementById('sudokuResult').style.display = 'none';
+        }
+        
+        // 加载示例
+        function loadExample(level) {
+            const examples = {
+                1: [ // 简单
+                    [5,3,0,0,7,0,0,0,0],
+                    [6,0,0,1,9,5,0,0,0],
+                    [0,9,8,0,0,0,0,6,0],
+                    [8,0,0,0,6,0,0,0,3],
+                    [4,0,0,8,0,3,0,0,1],
+                    [7,0,0,0,2,0,0,0,6],
+                    [0,6,0,0,0,0,2,8,0],
+                    [0,0,0,4,1,9,0,0,5],
+                    [0,0,0,0,8,0,0,7,9]
+                ],
+                2: [ // 中等
+                    [0,0,0,6,0,0,4,0,0],
+                    [7,0,0,0,0,3,6,0,0],
+                    [0,0,0,0,9,1,0,8,0],
+                    [0,0,0,0,0,0,0,0,0],
+                    [0,5,0,1,8,0,0,0,3],
+                    [0,0,0,3,0,6,0,4,5],
+                    [0,4,0,2,0,0,0,6,0],
+                    [9,0,3,0,0,0,0,0,0],
+                    [0,2,0,0,0,0,1,0,0]
+                ],
+                3: [ // 困难
+                    [0,0,0,0,0,0,0,1,0],
+                    [4,0,0,0,0,0,0,0,0],
+                    [0,2,0,0,0,0,0,0,0],
+                    [0,0,0,0,5,0,4,0,7],
+                    [0,0,8,0,0,0,3,0,0],
+                    [0,0,1,0,9,0,0,0,0],
+                    [3,0,0,4,0,0,2,0,0],
+                    [0,5,0,1,0,0,0,0,0],
+                    [0,0,0,8,0,6,0,0,0]
+                ],
+                4: [ // 专家
+                    [0,0,0,0,0,0,0,0,0],
+                    [0,0,0,0,0,3,0,8,5],
+                    [0,0,1,0,2,0,0,0,0],
+                    [0,0,0,5,0,7,0,0,0],
+                    [0,0,4,0,0,0,1,0,0],
+                    [0,9,0,0,0,0,0,0,0],
+                    [5,0,0,0,0,0,0,7,3],
+                    [0,0,2,0,1,0,0,0,0],
+                    [0,0,0,0,4,0,0,0,9]
+                ]
+            };
+            
+            sudokuGrid = examples[level].map(row => [...row]);
+            createGridHTML();
+            document.getElementById('sudokuResult').style.display = 'none';
+        }
+        
+        // 加载空白网格
+        function loadEmptyGrid() {
+            clearGrid();
+        }
+        
+        // 初始化
+        initializeGrid();
+    </script>
+</body>
+</html>

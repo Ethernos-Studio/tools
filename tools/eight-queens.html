@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>八皇后问题 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .btn {
+            background-color: #006699;
+            color: #ffffff;
+            padding: 6px 12px;
+            border: 1px solid #004466;
+            cursor: pointer;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+            margin-right: 5px;
+        }
+        
+        .btn:hover {
+            background-color: #0088cc;
+        }
+        
+        .btn-secondary {
+            background-color: #666666;
+            border-color: #444444;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #888888;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 3px solid #006699;
+            font-size: 11px;
+        }
+        
+        .chess-board {
+            display: inline-block;
+            border: 2px solid #333;
+            margin: 10px 0;
+        }
+        
+        .chess-row {
+            display: flex;
+        }
+        
+        .chess-cell {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            font-weight: bold;
+        }
+        
+        .chess-cell.white {
+            background-color: #f0d9b5;
+        }
+        
+        .chess-cell.black {
+            background-color: #b58863;
+        }
+        
+        .chess-cell.queen {
+            color: #ff0000;
+        }
+        
+        .solution-info {
+            margin: 10px 0;
+            font-weight: bold;
+        }
+        
+        .solution-controls {
+            margin: 10px 0;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>八皇后问题求解</h2>
+                    
+                    <div class="form-group">
+                        <label>八皇后问题：在8×8的国际象棋棋盘上放置8个皇后，使得它们互不攻击。</label>
+                    </div>
+                    
+                    <button class="btn" onclick="solveEightQueens()">求解所有解</button>
+                    <button class="btn btn-secondary" onclick="clearResults()">清除结果</button>
+                    
+                    <div class="result" id="results" style="display: none;">
+                        <div class="solution-info" id="solutionInfo"></div>
+                        <div class="solution-controls" id="solutionControls" style="display: none;">
+                            <button class="btn" onclick="previousSolution()">上一个</button>
+                            <button class="btn" onclick="nextSolution()">下一个</button>
+                            <span id="solutionCounter"></span>
+                        </div>
+                        <div id="chessBoard"></div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        let solutions = [];
+        let currentSolutionIndex = 0;
+        
+        function solveEightQueens() {
+            solutions = [];
+            currentSolutionIndex = 0;
+            
+            // 使用回溯算法求解八皇后问题
+            function isSafe(board, row, col) {
+                // 检查同一列
+                for (let i = 0; i < row; i++) {
+                    if (board[i] === col) return false;
+                }
+                
+                // 检查左上对角线
+                for (let i = row - 1, j = col - 1; i >= 0 && j >= 0; i--, j--) {
+                    if (board[i] === j) return false;
+                }
+                
+                // 检查右上对角线
+                for (let i = row - 1, j = col + 1; i >= 0 && j < 8; i--, j++) {
+                    if (board[i] === j) return false;
+                }
+                
+                return true;
+            }
+            
+            function solve(board, row) {
+                if (row === 8) {
+                    solutions.push([...board]);
+                    return;
+                }
+                
+                for (let col = 0; col < 8; col++) {
+                    if (isSafe(board, row, col)) {
+                        board[row] = col;
+                        solve(board, row + 1);
+                        board[row] = -1;
+                    }
+                }
+            }
+            
+            const board = new Array(8).fill(-1);
+            solve(board, 0);
+            
+            displayResults();
+        }
+        
+        function displayResults() {
+            const resultsDiv = document.getElementById('results');
+            const solutionInfo = document.getElementById('solutionInfo');
+            const solutionControls = document.getElementById('solutionControls');
+            
+            if (solutions.length === 0) {
+                solutionInfo.innerHTML = '未找到解';
+                solutionControls.style.display = 'none';
+            } else {
+                solutionInfo.innerHTML = `共找到 ${solutions.length} 个解`;
+                solutionControls.style.display = 'block';
+                currentSolutionIndex = 0;
+                displaySolution();
+            }
+            
+            resultsDiv.style.display = 'block';
+        }
+        
+        function displaySolution() {
+            if (solutions.length === 0) return;
+            
+            const board = solutions[currentSolutionIndex];
+            const chessBoard = document.getElementById('chessBoard');
+            const counter = document.getElementById('solutionCounter');
+            
+            counter.innerHTML = `解 ${currentSolutionIndex + 1} / ${solutions.length}`;
+            
+            let html = '<div class="chess-board">';
+            for (let row = 0; row < 8; row++) {
+                html += '<div class="chess-row">';
+                for (let col = 0; col < 8; col++) {
+                    const isBlack = (row + col) % 2 === 1;
+                    const hasQueen = board[row] === col;
+                    const cellClass = `chess-cell ${isBlack ? 'black' : 'white'} ${hasQueen ? 'queen' : ''}`;
+                    const content = hasQueen ? '♛' : '';
+                    html += `<div class="${cellClass}">${content}</div>`;
+                }
+                html += '</div>';
+            }
+            html += '</div>';
+            
+            chessBoard.innerHTML = html;
+        }
+        
+        function previousSolution() {
+            if (currentSolutionIndex > 0) {
+                currentSolutionIndex--;
+                displaySolution();
+            }
+        }
+        
+        function nextSolution() {
+            if (currentSolutionIndex < solutions.length - 1) {
+                currentSolutionIndex++;
+                displaySolution();
+            }
+        }
+        
+        function clearResults() {
+            solutions = [];
+            currentSolutionIndex = 0;
+            document.getElementById('results').style.display = 'none';
+        }
+        
+        loadSidebar();
+    </script>
+</body>
+</html>

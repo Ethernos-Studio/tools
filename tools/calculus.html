@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>微积分计算器 - Ethernos Tools</title>
+    <link rel="stylesheet" href="../page.css">
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0" style="width: 100%; height: 100%;">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="main-title">
+                    <h1>微积分计算器</h1>
+                    <p>计算函数的导数、不定积分和定积分</p>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>函数输入</h2>
+                    
+                    <div class="form-group">
+                        <label for="functionInput">函数 f(x) =</label>
+                        <input type="text" id="functionInput" placeholder="例如: x^2 + 3*x + 2" value="x^2 + 3*x + 2">
+                        <small style="color: #666;">支持: +, -, *, /, ^, sin, cos, tan, ln, log, exp, sqrt</small>
+                    </div>
+                    
+                    <div style="display: flex; gap: 20px;">
+                        <div style="flex: 1;">
+                            <h3>求导</h3>
+                            <div class="form-group">
+                                <label for="derivativeOrder">阶数:</label>
+                                <select id="derivativeOrder">
+                                    <option value="1">一阶导数</option>
+                                    <option value="2">二阶导数</option>
+                                    <option value="3">三阶导数</option>
+                                </select>
+                            </div>
+                            <button class="btn" onclick="calculateDerivative()">求导</button>
+                            <div id="derivativeResult" class="result" style="display: none; margin-top: 10px;">
+                                <strong>导数结果：</strong>
+                                <div id="derivativeDetails"></div>
+                            </div>
+                        </div>
+                        
+                        <div style="flex: 1;">
+                            <h3>不定积分</h3>
+                            <button class="btn" onclick="calculateIndefiniteIntegral()">求不定积分</button>
+                            <div id="indefiniteResult" class="result" style="display: none; margin-top: 10px;">
+                                <strong>不定积分结果：</strong>
+                                <div id="indefiniteDetails"></div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>定积分计算</h2>
+                    
+                    <div style="display: flex; gap: 20px; align-items: end;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="lowerLimit">下限 (a):</label>
+                            <input type="number" id="lowerLimit" step="any" value="0">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="upperLimit">上限 (b):</label>
+                            <input type="number" id="upperLimit" step="any" value="1">
+                        </div>
+                        <div class="form-group" style="flex: 1;">
+                            <label for="intervals">分割数:</label>
+                            <input type="number" id="intervals" min="100" max="10000" value="1000">
+                        </div>
+                        <button class="btn" onclick="calculateDefiniteIntegral()">计算定积分</button>
+                    </div>
+                    
+                    <div id="definiteResult" class="result" style="display: none; margin-top: 15px;">
+                        <strong>定积分结果：</strong>
+                        <div id="definiteDetails"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>函数求值</h2>
+                    
+                    <div style="display: flex; gap: 20px; align-items: end;">
+                        <div class="form-group" style="flex: 1;">
+                            <label for="evaluatePoint">求值点 x =</label>
+                            <input type="number" id="evaluatePoint" step="any" value="1">
+                        </div>
+                        <button class="btn" onclick="evaluateFunction()">求函数值</button>
+                        <button class="btn btn-secondary" onclick="evaluateDerivative()">求导数值</button>
+                    </div>
+                    
+                    <div id="evaluateResult" class="result" style="display: none; margin-top: 15px;">
+                        <strong>求值结果：</strong>
+                        <div id="evaluateDetails"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>使用说明</h2>
+                    <p><strong>支持的函数和操作符：</strong></p>
+                    <ul>
+                        <li>基本运算：+ (加), - (减), * (乘), / (除), ^ (幂)</li>
+                        <li>三角函数：sin(x), cos(x), tan(x)</li>
+                        <li>指数对数：exp(x) (e^x), ln(x) (自然对数), log(x) (常用对数)</li>
+                        <li>其他函数：sqrt(x) (平方根), abs(x) (绝对值)</li>
+                    </ul>
+                    <p><strong>示例：</strong></p>
+                    <ul>
+                        <li>多项式：x^2 + 3*x + 2</li>
+                        <li>三角函数：sin(x) + cos(2*x)</li>
+                        <li>指数函数：exp(x) + ln(x)</li>
+                        <li>复合函数：sqrt(x^2 + 1)</li>
+                    </ul>
+                    <p><strong>注意事项：</strong></p>
+                    <ul>
+                        <li>定积分使用梯形法则进行数值计算</li>
+                        <li>不定积分显示常用形式，不含积分常数</li>
+                        <li>求导使用数值微分方法</li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '../bar.html', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+        
+        // 数学表达式解析和计算
+        function evaluateExpression(expr, x) {
+            try {
+                // 替换数学函数
+                let processedExpr = expr
+                    .replace(/sin\(/g, 'Math.sin(')
+                    .replace(/cos\(/g, 'Math.cos(')
+                    .replace(/tan\(/g, 'Math.tan(')
+                    .replace(/ln\(/g, 'Math.log(')
+                    .replace(/log\(/g, 'Math.log10(')
+                    .replace(/exp\(/g, 'Math.exp(')
+                    .replace(/sqrt\(/g, 'Math.sqrt(')
+                    .replace(/abs\(/g, 'Math.abs(')
+                    .replace(/\^/g, '**')
+                    .replace(/x/g, '(' + x + ')');
+                
+                return eval(processedExpr);
+            } catch (e) {
+                throw new Error('函数表达式错误');
+            }
+        }
+        
+        // 数值求导
+        function numericalDerivative(expr, x, order = 1) {
+            const h = 1e-8;
+            let result = evaluateExpression(expr, x);
+            
+            if (order === 1) {
+                // 一阶导数
+                const f1 = evaluateExpression(expr, x + h);
+                const f2 = evaluateExpression(expr, x - h);
+                return (f1 - f2) / (2 * h);
+            } else if (order === 2) {
+                // 二阶导数
+                const f0 = evaluateExpression(expr, x);
+                const f1 = evaluateExpression(expr, x + h);
+                const f2 = evaluateExpression(expr, x - h);
+                return (f1 - 2 * f0 + f2) / (h * h);
+            } else if (order === 3) {
+                // 三阶导数
+                const f1 = evaluateExpression(expr, x + h);
+                const f2 = evaluateExpression(expr, x - h);
+                const f3 = evaluateExpression(expr, x + 2 * h);
+                const f4 = evaluateExpression(expr, x - 2 * h);
+                return (f3 - 2 * f1 + 2 * f2 - f4) / (2 * h * h * h);
+            }
+        }
+        
+        // 数值积分（梯形法则）
+        function numericalIntegration(expr, a, b, n) {
+            if (a >= b) return 0;
+            
+            const h = (b - a) / n;
+            let sum = 0;
+            
+            for (let i = 0; i < n; i++) {
+                const x1 = a + i * h;
+                const x2 = a + (i + 1) * h;
+                const f1 = evaluateExpression(expr, x1);
+                const f2 = evaluateExpression(expr, x2);
+                sum += (f1 + f2) * h / 2;
+            }
+            
+            return sum;
+        }
+        
+        // 获取不定积分表达式（简化版本）
+        function getIndefiniteIntegral(expr) {
+            // 这是一个简化的不定积分规则表
+            const rules = [
+                { pattern: /^x\^(\d+)$/, integral: (match) => `x^${parseInt(match[1]) + 1}/${parseInt(match[1]) + 1}` },
+                { pattern: /^(\d+)\*x\^(\d+)$/, integral: (match) => `${match[1]}*x^${parseInt(match[2]) + 1}/${parseInt(match[2]) + 1}` },
+                { pattern: /^x$/, integral: () => 'x^2/2' },
+                { pattern: /^(\d+)\*x$/, integral: (match) => `${match[1]}*x^2/2` },
+                { pattern: /^(\d+)$/, integral: (match) => `${match[1]}*x` },
+                { pattern: /^sin\(x\)$/, integral: () => '-cos(x)' },
+                { pattern: /^cos\(x\)$/, integral: () => 'sin(x)' },
+                { pattern: /^exp\(x\)$/, integral: () => 'exp(x)' },
+                { pattern: /^1\/x$/, integral: () => 'ln|x|' }
+            ];
+            
+            // 尝试匹配简单规则
+            for (let rule of rules) {
+                const match = expr.match(rule.pattern);
+                if (match) {
+                    return rule.integral(match) + ' + C';
+                }
+            }
+            
+            // 对于复杂表达式，返回数值积分结果作为参考
+            return '复杂函数，请使用数值方法计算定积分';
+        }
+        
+        function calculateDerivative() {
+            const expr = document.getElementById('functionInput').value;
+            const order = parseInt(document.getElementById('derivativeOrder').value);
+            
+            if (!expr.trim()) {
+                alert('请输入函数表达式');
+                return;
+            }
+            
+            try {
+                // 在几个点计算导数值来验证
+                const testPoints = [-1, 0, 1, 2];
+                let derivativeResults = [];
+                
+                for (let x of testPoints) {
+                    const derivative = numericalDerivative(expr, x, order);
+                    if (isFinite(derivative)) {
+                        derivativeResults.push(`f${order === 1 ? '' : '^(' + order + ')'}(${x}) = ${derivative.toFixed(6)}`);
+                    }
+                }
+                
+                let resultHTML = `
+                    <p><strong>导数表达式：</strong> 数值导数 (阶数: ${order})</p>
+                    <p><strong>测试点求值：</strong></p>
+                    <ul>
+                        ${derivativeResults.map(r => `<li>${r}</li>`).join('')}
+                    </ul>
+                `;
+                
+                document.getElementById('derivativeDetails').innerHTML = resultHTML;
+                document.getElementById('derivativeResult').style.display = 'block';
+            } catch (e) {
+                alert('函数表达式错误: ' + e.message);
+            }
+        }
+        
+        function calculateIndefiniteIntegral() {
+            const expr = document.getElementById('functionInput').value;
+            
+            if (!expr.trim()) {
+                alert('请输入函数表达式');
+                return;
+            }
+            
+            try {
+                const integralExpr = getIndefiniteIntegral(expr);
+                
+                let resultHTML = `
+                    <p><strong>不定积分：</strong> ∫(${expr})dx = ${integralExpr}</p>
+                `;
+                
+                document.getElementById('indefiniteDetails').innerHTML = resultHTML;
+                document.getElementById('indefiniteResult').style.display = 'block';
+            } catch (e) {
+                alert('函数表达式错误: ' + e.message);
+            }
+        }
+        
+        function calculateDefiniteIntegral() {
+            const expr = document.getElementById('functionInput').value;
+            const a = parseFloat(document.getElementById('lowerLimit').value);
+            const b = parseFloat(document.getElementById('upperLimit').value);
+            const n = parseInt(document.getElementById('intervals').value);
+            
+            if (!expr.trim()) {
+                alert('请输入函数表达式');
+                return;
+            }
+            
+            if (isNaN(a) || isNaN(b) || isNaN(n)) {
+                alert('请输入有效的积分限和分割数');
+                return;
+            }
+            
+            if (n < 100 || n > 10000) {
+                alert('分割数应在100-10000之间');
+                return;
+            }
+            
+            try {
+                const result = numericalIntegration(expr, a, b, n);
+                
+                // 计算一些中间值用于验证
+                const mid = (a + b) / 2;
+                const f_a = evaluateExpression(expr, a);
+                const f_b = evaluateExpression(expr, b);
+                const f_mid = evaluateExpression(expr, mid);
+                
+                let resultHTML = `
+                    <p><strong>定积分结果：</strong> ∫[${a}→${b}] (${expr})dx = ${result.toFixed(8)}</p>
+                    <p><strong>函数值验证：</strong></p>
+                    <ul>
+                        <li>f(${a}) = ${!isFinite(f_a) ? '未定义' : f_a.toFixed(6)}</li>
+                        <li>f(${b}) = ${!isFinite(f_b) ? '未定义' : f_b.toFixed(6)}</li>
+                        <li>f(${mid.toFixed(3)}) = ${!isFinite(f_mid) ? '未定义' : f_mid.toFixed(6)}</li>
+                    </ul>
+                    <p><strong>计算信息：</strong> 使用梯形法则，分割数 ${n}</p>
+                `;
+                
+                document.getElementById('definiteDetails').innerHTML = resultHTML;
+                document.getElementById('definiteResult').style.display = 'block';
+            } catch (e) {
+                alert('计算错误: ' + e.message);
+            }
+        }
+        
+        function evaluateFunction() {
+            const expr = document.getElementById('functionInput').value;
+            const x = parseFloat(document.getElementById('evaluatePoint').value);
+            
+            if (!expr.trim()) {
+                alert('请输入函数表达式');
+                return;
+            }
+            
+            if (isNaN(x)) {
+                alert('请输入有效的求值点');
+                return;
+            }
+            
+            try {
+                const result = evaluateExpression(expr, x);
+                
+                let resultHTML = `
+                    <p><strong>函数值：</strong> f(${x}) = ${!isFinite(result) ? '未定义' : result.toFixed(8)}</p>
+                `;
+                
+                document.getElementById('evaluateDetails').innerHTML = resultHTML;
+                document.getElementById('evaluateResult').style.display = 'block';
+            } catch (e) {
+                alert('函数表达式错误: ' + e.message);
+            }
+        }
+        
+        function evaluateDerivative() {
+            const expr = document.getElementById('functionInput').value;
+            const x = parseFloat(document.getElementById('evaluatePoint').value);
+            
+            if (!expr.trim()) {
+                alert('请输入函数表达式');
+                return;
+            }
+            
+            if (isNaN(x)) {
+                alert('请输入有效的求值点');
+                return;
+            }
+            
+            try {
+                const derivative = numericalDerivative(expr, x, 1);
+                
+                let resultHTML = `
+                    <p><strong>导数值：</strong> f'(${x}) = ${!isFinite(derivative) ? '未定义' : derivative.toFixed(8)}</p>
+                `;
+                
+                document.getElementById('evaluateDetails').innerHTML = resultHTML;
+                document.getElementById('evaluateResult').style.display = 'block';
+            } catch (e) {
+                alert('函数表达式错误: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

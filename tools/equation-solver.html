@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>方程求解器 - Ethernos Tools</title>
+    <link rel="stylesheet" href="../page.css">
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0" style="width: 100%; height: 100%;">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="main-title">
+                    <h1>方程求解器</h1>
+                    <p>求解一元n次方程，支持2-10次方程</p>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>方程输入</h2>
+                    
+                    <div class="form-group">
+                        <label for="equationDegree">方程次数:</label>
+                        <select id="equationDegree" onchange="updateEquationForm()">
+                            <option value="2">二次方程</option>
+                            <option value="3">三次方程</option>
+                            <option value="4">四次方程</option>
+                            <option value="5">五次方程</option>
+                            <option value="6">六次方程</option>
+                        </select>
+                    </div>
+                    
+                    <div id="coefficientInputs">
+                        <!-- 动态生成的系数输入框 -->
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn" onclick="solveEquation()">求解方程</button>
+                        <button class="btn btn-secondary" onclick="clearEquation()">清空</button>
+                    </div>
+                    
+                    <div id="equationResult" class="result" style="display: none;">
+                        <h3>求解结果：</h3>
+                        <div id="equationDetails"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>数值求解（牛顿法）</h2>
+                    
+                    <div class="form-group">
+                        <label for="initialGuess">初始猜测值:</label>
+                        <input type="number" id="initialGuess" step="any" value="1">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="tolerance">精度要求:</label>
+                        <select id="tolerance">
+                            <option value="1e-6">1e-6</option>
+                            <option value="1e-8" selected>1e-8</option>
+                            <option value="1e-10">1e-10</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="maxIterations">最大迭代次数:</label>
+                        <input type="number" id="maxIterations" min="10" max="1000" value="100">
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn" onclick="solveNumerically()">数值求解</button>
+                    </div>
+                    
+                    <div id="numericalResult" class="result" style="display: none;">
+                        <h3>数值求解结果：</h3>
+                        <div id="numericalDetails"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>方程知识</h2>
+                    <p><strong>一元n次方程：</strong></p>
+                    <ul>
+                        <li>一般形式：aₙxⁿ + aₙ₋₁xⁿ⁻¹ + ... + a₁x + a₀ = 0</li>
+                        <li>二次方程求根公式：x = (-b ± √(b²-4ac)) / (2a)</li>
+                        <li>三次及以上方程：通常需要数值方法求解</li>
+                        <li>复数根：实系数方程的复数根成对出现</li>
+                    </ul>
+                    <p><strong>求解方法：</strong></p>
+                    <ul>
+                        <li>解析解：二次、三次、四次方程有求根公式</li>
+                        <li>数值解：牛顿迭代法等迭代算法</li>
+                        <li>复数解：所有n次方程在复数域都有n个根</li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '../bar.html', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+        
+        // 更新方程输入表单
+        function updateEquationForm() {
+            const degree = parseInt(document.getElementById('equationDegree').value);
+            const container = document.getElementById('coefficientInputs');
+            
+            let html = '';
+            for (let i = degree; i >= 0; i--) {
+                const power = i === 0 ? '' : i === 1 ? 'x' : `x^${i}`;
+                const sign = i === 0 ? '' : ' + ';
+                
+                html += `
+                    <div class="form-group" style="display: flex; align-items: center; gap: 10px;">
+                        <label style="width: 80px;">系数 a${i}:</label>
+                        <input type="number" id="coeff${i}" step="any" style="width: 100px;" value="${i === degree ? '1' : i === 0 ? '-1' : '0'}">
+                        <span>${sign}${power}</span>
+                    </div>
+                `;
+            }
+            
+            container.innerHTML = html;
+        }
+        
+        // 计算多项式值
+        function evaluatePolynomial(coeffs, x) {
+            let result = 0;
+            for (let i = 0; i < coeffs.length; i++) {
+                result += coeffs[i] * Math.pow(x, coeffs.length - 1 - i);
+            }
+            return result;
+        }
+        
+        // 计算多项式导数
+        function polynomialDerivative(coeffs) {
+            const derivativeCoeffs = [];
+            for (let i = 0; i < coeffs.length - 1; i++) {
+                derivativeCoeffs.push(coeffs[i] * (coeffs.length - 1 - i));
+            }
+            return derivativeCoeffs;
+        }
+        
+        // 求解二次方程
+        function solveQuadratic(coeffs) {
+            const [a, b, c] = coeffs;
+            const discriminant = b * b - 4 * a * c;
+            
+            if (discriminant < 0) {
+                const realPart = -b / (2 * a);
+                const imagPart = Math.sqrt(-discriminant) / (2 * a);
+                return [
+                    { real: realPart, imag: imagPart },
+                    { real: realPart, imag: -imagPart }
+                ];
+            } else {
+                const sqrt_disc = Math.sqrt(discriminant);
+                return [
+                    { real: (-b + sqrt_disc) / (2 * a), imag: 0 },
+                    { real: (-b - sqrt_disc) / (2 * a), imag: 0 }
+                ];
+            }
+        }
+        
+        // 求解三次方程（简化版，使用数值方法）
+        function solveCubic(coeffs) {
+            // 对于三次方程，使用数值方法求解多个根
+            const roots = [];
+            const initialGuesses = [-10, -1, 0, 1, 10];
+            
+            for (let guess of initialGuesses) {
+                const root = newtonMethod(coeffs, guess);
+                if (root !== null && !roots.some(r => Math.abs(r.real - root.real) < 1e-6)) {
+                    roots.push(root);
+                }
+            }
+            
+            return roots.slice(0, 3); // 最多返回3个根
+        }
+        
+        // 牛顿法求解
+        function newtonMethod(coeffs, initialGuess, tolerance = 1e-8, maxIterations = 100) {
+            let x = initialGuess;
+            const derivativeCoeffs = polynomialDerivative(coeffs);
+            
+            for (let i = 0; i < maxIterations; i++) {
+                const fx = evaluatePolynomial(coeffs, x);
+                const fpx = evaluatePolynomial(derivativeCoeffs, x);
+                
+                if (Math.abs(fx) < tolerance) {
+                    return { real: x, imag: 0 };
+                }
+                
+                if (Math.abs(fpx) < 1e-15) {
+                    return null; // 导数为零，无法继续
+                }
+                
+                const newX = x - fx / fpx;
+                if (Math.abs(newX - x) < tolerance) {
+                    return { real: newX, imag: 0 };
+                }
+                
+                x = newX;
+            }
+            
+            return null; // 未收敛
+        }
+        
+        // 求解方程
+        function solveEquation() {
+            const degree = parseInt(document.getElementById('equationDegree').value);
+            const coeffs = [];
+            
+            // 获取系数
+            for (let i = degree; i >= 0; i--) {
+                const coeff = parseFloat(document.getElementById(`coeff${i}`).value);
+                if (isNaN(coeff)) {
+                    alert(`请输入有效的系数 a${i}`);
+                    return;
+                }
+                coeffs.push(coeff);
+            }
+            
+            // 检查最高次项系数
+            if (Math.abs(coeffs[0]) < 1e-15) {
+                alert('最高次项系数不能为零');
+                return;
+            }
+            
+            let roots = [];
+            let method = '';
+            
+            try {
+                if (degree === 2) {
+                    roots = solveQuadratic(coeffs);
+                    method = '二次方程求根公式';
+                } else if (degree === 3) {
+                    roots = solveCubic(coeffs);
+                    method = '数值方法（牛顿法）';
+                } else {
+                    // 高次方程使用多个初始值进行数值求解
+                    const initialGuesses = [];
+                    for (let i = -degree; i <= degree; i += 2) {
+                        initialGuesses.push(i);
+                    }
+                    
+                    for (let guess of initialGuesses) {
+                        const root = newtonMethod(coeffs, guess);
+                        if (root !== null && !roots.some(r => Math.abs(r.real - root.real) < 1e-6)) {
+                            roots.push(root);
+                        }
+                    }
+                    method = '数值方法（牛顿法）';
+                }
+                
+                // 显示结果
+                let resultHTML = `
+                    <p><strong>方程：</strong> ${formatPolynomial(coeffs)} = 0</p>
+                    <p><strong>求解方法：</strong> ${method}</p>
+                    <p><strong>根的个数：</strong> ${roots.length}</p>
+                    <p><strong>根：</strong></p>
+                    <ul>
+                `;
+                
+                for (let i = 0; i < roots.length; i++) {
+                    const root = roots[i];
+                    if (Math.abs(root.imag) < 1e-10) {
+                        // 实根
+                        resultHTML += `<li>x${i + 1} = ${root.real.toFixed(8)}</li>`;
+                    } else {
+                        // 复根
+                        resultHTML += `<li>x${i + 1} = ${root.real.toFixed(6)} ${root.imag >= 0 ? '+' : '-'} ${Math.abs(root.imag).toFixed(6)}i</li>`;
+                    }
+                }
+                
+                resultHTML += '</ul>';
+                
+                // 验证根
+                resultHTML += '<p><strong>验证：</strong></p><ul>';
+                for (let i = 0; i < Math.min(roots.length, 3); i++) {
+                    const root = roots[i];
+                    const verification = evaluatePolynomial(coeffs, root.real);
+                    resultHTML += `<li>f(${root.real.toFixed(6)}) = ${verification.toExponential(3)}</li>`;
+                }
+                resultHTML += '</ul>';
+                
+                document.getElementById('equationDetails').innerHTML = resultHTML;
+                document.getElementById('equationResult').style.display = 'block';
+                
+            } catch (e) {
+                alert('求解失败: ' + e.message);
+            }
+        }
+        
+        // 数值求解
+        function solveNumerically() {
+            const degree = parseInt(document.getElementById('equationDegree').value);
+            const coeffs = [];
+            
+            // 获取系数
+            for (let i = degree; i >= 0; i--) {
+                const coeff = parseFloat(document.getElementById(`coeff${i}`).value);
+                if (isNaN(coeff)) {
+                    alert(`请输入有效的系数 a${i}`);
+                    return;
+                }
+                coeffs.push(coeff);
+            }
+            
+            const initialGuess = parseFloat(document.getElementById('initialGuess').value);
+            const tolerance = parseFloat(document.getElementById('tolerance').value);
+            const maxIterations = parseInt(document.getElementById('maxIterations').value);
+            
+            if (isNaN(initialGuess) || isNaN(tolerance) || isNaN(maxIterations)) {
+                alert('请输入有效的数值求解参数');
+                return;
+            }
+            
+            try {
+                const root = newtonMethod(coeffs, initialGuess, tolerance, maxIterations);
+                
+                if (root === null) {
+                    document.getElementById('numericalDetails').innerHTML = '<p><strong>求解失败：</strong> 未能在给定迭代次数内收敛</p>';
+                } else {
+                    const verification = evaluatePolynomial(coeffs, root.real);
+                    let resultHTML = `
+                        <p><strong>初始猜测：</strong> ${initialGuess}</p>
+                        <p><strong>收敛根：</strong> x = ${root.real.toFixed(8)}</p>
+                        <p><strong>验证：</strong> f(${root.real.toFixed(6)}) = ${verification.toExponential(3)}</p>
+                        <p><strong>精度：</strong> ${tolerance}</p>
+                        <p><strong>迭代次数：</strong> ${maxIterations}</p>
+                    `;
+                    document.getElementById('numericalDetails').innerHTML = resultHTML;
+                }
+                
+                document.getElementById('numericalResult').style.display = 'block';
+            } catch (e) {
+                alert('数值求解失败: ' + e.message);
+            }
+        }
+        
+        // 格式化多项式显示
+        function formatPolynomial(coeffs) {
+            let result = '';
+            const degree = coeffs.length - 1;
+            
+            for (let i = 0; i < coeffs.length; i++) {
+                const coeff = coeffs[i];
+                const power = degree - i;
+                
+                if (Math.abs(coeff) < 1e-15) continue;
+                
+                let term = '';
+                if (power === 0) {
+                    term = coeff.toString();
+                } else if (power === 1) {
+                    term = coeff === 1 ? 'x' : coeff === -1 ? '-x' : coeff + '*x';
+                } else {
+                    term = coeff === 1 ? `x^${power}` : coeff === -1 ? `-x^${power}` : coeff + `*x^${power}`;
+                }
+                
+                if (result === '') {
+                    result = term;
+                } else {
+                    result += coeff >= 0 ? ' + ' + term : ' - ' + term.replace('-', '');
+                }
+            }
+            
+            return result || '0';
+        }
+        
+        function clearEquation() {
+            updateEquationForm();
+            document.getElementById('equationResult').style.display = 'none';
+            document.getElementById('numericalResult').style.display = 'none';
+        }
+        
+        // 初始化
+        updateEquationForm();
+    </script>
+</body>
+</html>

@@ -1,0 +1,375 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>24点求解器 - Ethernos Tools</title>
+    <link rel="stylesheet" href="../style.css">
+    <style>
+        .input-numbers {
+            display: flex;
+            justify-content: center;
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .number-input {
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            text-align: center;
+            border: 2px solid #999;
+            border-radius: 8px;
+        }
+        
+        .solutions-container {
+            margin-top: 20px;
+        }
+        
+        .solution-item {
+            background-color: #f0f8ff;
+            border: 1px solid #006699;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+        }
+        
+        .solution-step {
+            margin: 5px 0;
+            padding-left: 20px;
+        }
+        
+        .no-solution {
+            background-color: #ffe8e8;
+            border-color: #cc6666;
+            color: #cc0000;
+        }
+        
+        .stats-info {
+            background-color: #f5f5f5;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 15px 0;
+        }
+        
+        .quick-examples {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 15px 0;
+            flex-wrap: wrap;
+        }
+        
+        .example-btn {
+            padding: 8px 12px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0" style="width: 100%; height: 100%;">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="main-title">
+                    <h1>24点求解器</h1>
+                    <p>输入四个数字，自动计算得到24的所有方法</p>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>输入数字</h2>
+                    
+                    <div class="input-numbers">
+                        <input type="number" id="num1" class="number-input" placeholder="1" min="1" max="13" value="1">
+                        <input type="number" id="num2" class="number-input" placeholder="2" min="1" max="13" value="2">
+                        <input type="number" id="num3" class="number-input" placeholder="3" min="1" max="13" value="3">
+                        <input type="number" id="num4" class="number-input" placeholder="4" min="1" max="13" value="4">
+                    </div>
+                    
+                    <div class="quick-examples">
+                        <button class="btn example-btn" onclick="loadExample(1)">示例1: 1,2,3,4</button>
+                        <button class="btn example-btn" onclick="loadExample(2)">示例2: 3,3,8,8</button>
+                        <button class="btn example-btn" onclick="loadExample(3)">示例3: 4,4,10,10</button>
+                        <button class="btn example-btn" onclick="loadExample(4)">示例4: 1,5,5,5</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <button class="btn" onclick="solve24()">求解24点</button>
+                        <button class="btn btn-secondary" onclick="clearInputs()">清空</button>
+                    </div>
+                    
+                    <div id="solutionResult" class="solutions-container" style="display: none;">
+                        <h3>求解结果：</h3>
+                        <div id="solutionsList"></div>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>求解统计</h2>
+                    <div class="stats-info" id="statsInfo">
+                        <p>输入四个数字后点击"求解24点"查看结果统计</p>
+                    </div>
+                </div>
+                
+                <div class="tool-container">
+                    <h2>24点游戏规则</h2>
+                    <p><strong>游戏规则：</strong></p>
+                    <ul>
+                        <li>给定四个数字，每个数字必须使用且只能使用一次</li>
+                        <li>可以使用加(+)、减(-)、乘(×)、除(÷)四种基本运算</li>
+                        <li>可以使用括号改变运算顺序</li>
+                        <li>目标是通过运算得到结果24</li>
+                    </ul>
+                    <p><strong>求解算法：</strong></p>
+                    <ul>
+                        <li>生成四个数字的所有排列组合</li>
+                        <li>尝试所有可能的运算符组合</li>
+                        <li>尝试所有可能的括号位置</li>
+                        <li>验证每种组合是否等于24</li>
+                    </ul>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', '../bar.html', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+        
+        // 获取输入的数字
+        function getInputNumbers() {
+            const numbers = [];
+            for (let i = 1; i <= 4; i++) {
+                const value = parseInt(document.getElementById(`num${i}`).value);
+                if (isNaN(value) || value < 1 || value > 13) {
+                    alert(`请输入有效的数字（1-13）`);
+                    return null;
+                }
+                numbers.push(value);
+            }
+            return numbers;
+        }
+        
+        // 计算表达式
+        function evaluateExpression(expr) {
+            try {
+                const result = Function('"use strict"; return (' + expr + ')')();
+                return isFinite(result) ? result : null;
+            } catch (e) {
+                return null;
+            }
+        }
+        
+        // 生成所有排列
+        function getPermutations(arr) {
+            if (arr.length <= 1) return [arr];
+            
+            const result = [];
+            for (let i = 0; i < arr.length; i++) {
+                const current = arr[i];
+                const remaining = arr.slice(0, i).concat(arr.slice(i + 1));
+                const perms = getPermutations(remaining);
+                
+                for (let perm of perms) {
+                    result.push([current].concat(perm));
+                }
+            }
+            
+            return result;
+        }
+        
+        // 生成所有可能的表达式
+        function generateAllExpressions(numbers) {
+            const operators = ['+', '-', '*', '/'];
+            const expressions = [];
+            const perms = getPermutations(numbers);
+            
+            for (let perm of perms) {
+                const [a, b, c, d] = perm;
+                
+                // 不同的括号模式
+                const patterns = [
+                    // 无括号
+                    (op1, op2, op3) => `${a} ${op1} ${b} ${op2} ${c} ${op3} ${d}`,
+                    // 一种括号
+                    (op1, op2, op3) => `(${a} ${op1} ${b}) ${op2} ${c} ${op3} ${d}`,
+                    (op1, op2, op3) => `${a} ${op1} (${b} ${op2} ${c}) ${op3} ${d}`,
+                    (op1, op2, op3) => `${a} ${op1} ${b} ${op2} (${c} ${op3} ${d})`,
+                    // 两种括号
+                    (op1, op2, op3) => `(${a} ${op1} ${b}) ${op2} (${c} ${op3} ${d})`,
+                    (op1, op2, op3) => `(${a} ${op1} ${b} ${op2} ${c}) ${op3} ${d}`,
+                    (op1, op2, op3) => `${a} ${op1} (${b} ${op2} ${c} ${op3} ${d})`,
+                    // 嵌套括号
+                    (op1, op2, op3) => `((${a} ${op1} ${b}) ${op2} ${c}) ${op3} ${d}`,
+                    (op1, op2, op3) => `(${a} ${op1} (${b} ${op2} ${c})) ${op3} ${d}`,
+                    (op1, op2, op3) => `${a} ${op1} ((${b} ${op2} ${c}) ${op3} ${d})`,
+                    (op1, op2, op3) => `${a} ${op1} (${b} ${op2} (${c} ${op3} ${d}))`
+                ];
+                
+                // 生成所有运算符组合
+                for (let op1 of operators) {
+                    for (let op2 of operators) {
+                        for (let op3 of operators) {
+                            for (let pattern of patterns) {
+                                const expr = pattern(op1, op2, op3);
+                                expressions.push(expr);
+                            }
+                        }
+                    }
+                }
+            }
+            
+            return expressions;
+        }
+        
+        // 求解24点
+        function solve24() {
+            const numbers = getInputNumbers();
+            if (!numbers) return;
+            
+            const expressions = generateAllExpressions(numbers);
+            const solutions = [];
+            
+            // 测试所有表达式
+            for (let expr of expressions) {
+                const result = evaluateExpression(expr);
+                if (result !== null && Math.abs(result - 24) < 1e-10) {
+                    // 检查是否已经存在类似的解
+                    const isDuplicate = solutions.some(sol => {
+                        const solResult = evaluateExpression(sol);
+                        return Math.abs(solResult - result) < 1e-10;
+                    });
+                    
+                    if (!isDuplicate) {
+                        solutions.push(expr);
+                    }
+                }
+            }
+            
+            // 显示结果
+            displaySolutions(solutions, numbers);
+            displayStats(solutions, expressions.length);
+        }
+        
+        // 显示解答
+        function displaySolutions(solutions, numbers) {
+            const container = document.getElementById('solutionsList');
+            const resultDiv = document.getElementById('solutionResult');
+            
+            if (solutions.length === 0) {
+                container.innerHTML = `
+                    <div class="solution-item no-solution">
+                        <strong>无解</strong>
+                        <p>数字 [${numbers.join(', ')}] 无法通过四则运算得到24</p>
+                    </div>
+                `;
+            } else {
+                let html = `<p><strong>找到 ${solutions.length} 个解答：</strong></p>`;
+                
+                for (let i = 0; i < Math.min(solutions.length, 10); i++) {
+                    const expr = solutions[i];
+                    const steps = generateSolutionSteps(expr);
+                    
+                    html += `
+                        <div class="solution-item">
+                            <strong>解答 ${i + 1}:</strong> ${expr} = 24
+                            <div class="solution-step">${steps}</div>
+                        </div>
+                    `;
+                }
+                
+                if (solutions.length > 10) {
+                    html += `<p><em>... 还有 ${solutions.length - 10} 个其他解答</em></p>`;
+                }
+                
+                container.innerHTML = html;
+            }
+            
+            resultDiv.style.display = 'block';
+        }
+        
+        // 生成解题步骤
+        function generateSolutionSteps(expr) {
+            try {
+                // 简化的步骤生成
+                const steps = [];
+                let step = 1;
+                
+                // 计算内层括号
+                const innerPattern = /\(([^()]+)\)/g;
+                let match;
+                let workingExpr = expr;
+                
+                while ((match = innerPattern.exec(workingExpr)) !== null) {
+                    const innerResult = evaluateExpression(match[1]);
+                    if (innerResult !== null) {
+                        steps.push(`步骤${step}: 计算 ${match[1]} = ${innerResult}`);
+                        step++;
+                        workingExpr = workingExpr.replace(match[0], innerResult.toString());
+                    }
+                }
+                
+                // 最终计算
+                const finalResult = evaluateExpression(workingExpr);
+                if (finalResult !== null && steps.length > 0) {
+                    steps.push(`步骤${step}: 计算 ${workingExpr} = ${finalResult}`);
+                }
+                
+                return steps.length > 0 ? steps.join('<br>') : '直接计算即可';
+            } catch (e) {
+                return '计算步骤略';
+            }
+        }
+        
+        // 显示统计信息
+        function displayStats(solutions, totalAttempts) {
+            const container = document.getElementById('statsInfo');
+            const successRate = totalAttempts > 0 ? (solutions.length / totalAttempts * 100).toFixed(2) : 0;
+            
+            container.innerHTML = `
+                <p><strong>输入数字：</strong> [${getInputNumbers().join(', ')}]</p>
+                <p><strong>尝试组合数：</strong> ${totalAttempts.toLocaleString()}</p>
+                <p><strong>有效解答数：</strong> ${solutions.length}</p>
+                <p><strong>成功率：</strong> ${successRate}%</p>
+                <p><strong>求解时间：</strong> 实时计算</p>
+            `;
+        }
+        
+        // 加载示例
+        function loadExample(example) {
+            const examples = {
+                1: [1, 2, 3, 4],
+                2: [3, 3, 8, 8],
+                3: [4, 4, 10, 10],
+                4: [1, 5, 5, 5]
+            };
+            
+            const numbers = examples[example];
+            for (let i = 0; i < 4; i++) {
+                document.getElementById(`num${i + 1}`).value = numbers[i];
+            }
+            
+            solve24();
+        }
+        
+        // 清空输入
+        function clearInputs() {
+            for (let i = 1; i <= 4; i++) {
+                document.getElementById(`num${i}`).value = '';
+            }
+            document.getElementById('solutionResult').style.display = 'none';
+            document.getElementById('statsInfo').innerHTML = '<p>输入四个数字后点击"求解24点"查看结果统计</p>';
+        }
+    </script>
+</body>
+</html>
