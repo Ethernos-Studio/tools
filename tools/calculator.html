@@ -1,0 +1,228 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>计算器 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .calculator {
+            background-color: #e0e0e0;
+            border: 2px solid #999999;
+            padding: 15px;
+            width: 220px;
+            margin: 0 auto;
+        }
+        
+        .display {
+            background-color: #c0c0c0;
+            border: 2px inset #666666;
+            padding: 8px;
+            font-size: 18px;
+            text-align: right;
+            margin-bottom: 10px;
+            height: 25px;
+            font-family: "Courier New", monospace;
+        }
+        
+        .buttons {
+            width: 100%;
+        }
+        
+        .calc-btn {
+            float: left;
+            width: 50px;
+            height: 35px;
+            margin: 2px;
+            font-size: 14px;
+            border: 2px outset #999999;
+            cursor: pointer;
+            background-color: #d0d0d0;
+        }
+        
+        .calc-btn:active {
+            border-style: inset;
+        }
+        
+        .calc-btn.number {
+            background-color: #e8e8e8;
+        }
+        
+        .calc-btn.operator {
+            background-color: #6699cc;
+            color: #ffffff;
+        }
+        
+        .calc-btn.clear {
+            background-color: #cc6666;
+            color: #ffffff;
+        }
+        
+        .calc-btn.equals {
+            background-color: #66cc66;
+            color: #ffffff;
+            width: 104px;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>计算器</h2>
+                    
+                    <div class="calculator">
+                        <div class="display" id="display">0</div>
+                        <div class="buttons">
+                            <button class="calc-btn clear" onclick="clearDisplay()">C</button>
+                            <button class="calc-btn operator" onclick="appendToDisplay('/')">/</button>
+                            <button class="calc-btn operator" onclick="appendToDisplay('*')">*</button>
+                            <button class="calc-btn operator" onclick="deleteLast()">←</button>
+                            
+                            <button class="calc-btn number" onclick="appendToDisplay('7')">7</button>
+                            <button class="calc-btn number" onclick="appendToDisplay('8')">8</button>
+                            <button class="calc-btn number" onclick="appendToDisplay('9')">9</button>
+                            <button class="calc-btn operator" onclick="appendToDisplay('-')">-</button>
+                            
+                            <button class="calc-btn number" onclick="appendToDisplay('4')">4</button>
+                            <button class="calc-btn number" onclick="appendToDisplay('5')">5</button>
+                            <button class="calc-btn number" onclick="appendToDisplay('6')">6</button>
+                            <button class="calc-btn operator" onclick="appendToDisplay('+')">+</button>
+                            
+                            <button class="calc-btn number" onclick="appendToDisplay('1')">1</button>
+                            <button class="calc-btn number" onclick="appendToDisplay('2')">2</button>
+                            <button class="calc-btn number" onclick="appendToDisplay('3')">3</button>
+                            <button class="calc-btn operator" onclick="appendToDisplay('.')">.</button>
+                            
+                            <button class="calc-btn number" onclick="appendToDisplay('0')" style="width: 104px;">0</button>
+                            <button class="calc-btn equals" onclick="calculate()">=</button>
+                            
+                            <div class="clearfix"></div>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        var display = document.getElementById('display');
+        var currentInput = '0';
+        var shouldResetDisplay = false;
+        
+        function updateDisplay() {
+            display.innerHTML = currentInput;
+        }
+        
+        function clearDisplay() {
+            currentInput = '0';
+            shouldResetDisplay = false;
+            updateDisplay();
+        }
+        
+        function appendToDisplay(value) {
+            if (shouldResetDisplay) {
+                currentInput = '0';
+                shouldResetDisplay = false;
+            }
+            
+            if (currentInput === '0' && value !== '.') {
+                currentInput = value;
+            } else {
+                currentInput += value;
+            }
+            
+            updateDisplay();
+        }
+        
+        function deleteLast() {
+            if (currentInput.length > 1) {
+                currentInput = currentInput.slice(0, -1);
+            } else {
+                currentInput = '0';
+            }
+            updateDisplay();
+        }
+        
+        function calculate() {
+            try {
+                var result = eval(currentInput);
+                if (!isFinite(result)) {
+                    currentInput = '错误';
+                } else {
+                    currentInput = result.toString();
+                }
+                shouldResetDisplay = true;
+                updateDisplay();
+            } catch (error) {
+                currentInput = '错误';
+                shouldResetDisplay = true;
+                updateDisplay();
+            }
+        }
+        
+        loadSidebar();
+    </script>
+</body>
+</html>

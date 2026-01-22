@@ -1,0 +1,307 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>单位转换器 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .form-group input[type="number"], .form-group select {
+            width: 150px;
+            padding: 4px 6px;
+            border: 1px solid #666666;
+            font-size: 11px;
+        }
+        
+        .btn {
+            background-color: #006699;
+            color: #ffffff;
+            padding: 4px 8px;
+            border: 1px solid #004466;
+            cursor: pointer;
+            font-size: 11px;
+        }
+        
+        .btn:hover {
+            background-color: #0088cc;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 3px solid #006699;
+            font-size: 11px;
+            display: none;
+        }
+        
+        .converter-row {
+            width: 100%;
+            margin-bottom: 10px;
+        }
+        
+        .converter-cell {
+            float: left;
+            width: 40%;
+            margin-right: 5%;
+        }
+        
+        .converter-cell.swap {
+            width: 10%;
+            text-align: center;
+            margin-right: 0;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>单位转换器</h2>
+                    
+                    <div class="form-group">
+                        <label for="conversionType">转换类型：</label>
+                        <select id="conversionType" onchange="updateUnits()">
+                            <option value="length">长度</option>
+                            <option value="weight">重量</option>
+                            <option value="temperature">温度</option>
+                            <option value="area">面积</option>
+                            <option value="volume">体积</option>
+                        </select>
+                    </div>
+                    
+                    <div class="converter-row">
+                        <div class="converter-cell">
+                            <div class="form-group">
+                                <label for="fromValue">输入值：</label>
+                                <input type="text" id="fromValue" placeholder="输入数值" oninput="convert()">
+                            </div>
+                            <div class="form-group">
+                                <label for="fromUnit">原单位：</label>
+                                <select id="fromUnit" onchange="convert()"></select>
+                            </div>
+                        </div>
+                        
+                        <div class="converter-cell swap">
+                            <button class="btn" onclick="swapUnits()" style="margin-top: 20px;">⇄</button>
+                        </div>
+                        
+                        <div class="converter-cell">
+                            <div class="form-group">
+                                <label for="toValue">结果值：</label>
+                                <input type="text" id="toValue" placeholder="转换结果" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label for="toUnit">目标单位：</label>
+                                <select id="toUnit" onchange="convert()"></select>
+                            </div>
+                        </div>
+                        
+                        <div class="clearfix"></div>
+                    </div>
+                    
+                    <div class="result" id="conversionResult">
+                        <strong>转换结果：</strong>
+                        <div id="resultText" style="margin-top: 10px;"></div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        var units = {
+            length: {
+                units: ['米', '千米', '厘米', '毫米', '英寸', '英尺', '码', '英里'],
+                factors: [1, 0.001, 100, 1000, 39.3701, 3.28084, 1.09361, 0.000621371]
+            },
+            weight: {
+                units: ['千克', '克', '毫克', '吨', '磅', '盎司'],
+                factors: [1, 1000, 1000000, 0.001, 2.20462, 35.274]
+            },
+            temperature: {
+                units: ['摄氏度', '华氏度', '开尔文'],
+                convert: function(value, from, to) {
+                    var celsius = value;
+                    
+                    if (from === '华氏度') {
+                        celsius = (value - 32) * 5/9;
+                    } else if (from === '开尔文') {
+                        celsius = value - 273.15;
+                    }
+                    
+                    if (to === '摄氏度') {
+                        return celsius;
+                    } else if (to === '华氏度') {
+                        return celsius * 9/5 + 32;
+                    } else if (to === '开尔文') {
+                        return celsius + 273.15;
+                    }
+                }
+            },
+            area: {
+                units: ['平方米', '平方千米', '平方厘米', '公顷', '亩', '平方英尺', '平方英寸'],
+                factors: [1, 0.000001, 10000, 0.0001, 0.0015, 10.7639, 1550]
+            },
+            volume: {
+                units: ['立方米', '升', '毫升', '加仑', '夸脱', '品脱', '液量盎司'],
+                factors: [1, 1000, 1000000, 264.172, 1056.69, 2113.38, 33814]
+            }
+        };
+        
+        function updateUnits() {
+            var type = document.getElementById('conversionType').value;
+            var fromUnit = document.getElementById('fromUnit');
+            var toUnit = document.getElementById('toUnit');
+            
+            fromUnit.innerHTML = '';
+            toUnit.innerHTML = '';
+            
+            if (type === 'temperature') {
+                for (var i = 0; i < units.temperature.units.length; i++) {
+                    var unit = units.temperature.units[i];
+                    fromUnit.innerHTML += '<option value="' + unit + '">' + unit + '</option>';
+                    toUnit.innerHTML += '<option value="' + unit + '">' + unit + '</option>';
+                }
+            } else {
+                for (var i = 0; i < units[type].units.length; i++) {
+                    var unit = units[type].units[i];
+                    fromUnit.innerHTML += '<option value="' + unit + '">' + unit + '</option>';
+                    toUnit.innerHTML += '<option value="' + unit + '">' + unit + '</option>';
+                }
+            }
+            
+            if (toUnit.options.length > 1) {
+                toUnit.selectedIndex = 1;
+            }
+            
+            convert();
+        }
+        
+        function convert() {
+            var type = document.getElementById('conversionType').value;
+            var fromValue = parseFloat(document.getElementById('fromValue').value);
+            var fromUnit = document.getElementById('fromUnit').value;
+            var toUnit = document.getElementById('toUnit').value;
+            var toValueInput = document.getElementById('toValue');
+            var resultDiv = document.getElementById('conversionResult');
+            var resultText = document.getElementById('resultText');
+            
+            if (isNaN(fromValue)) {
+                toValueInput.value = '';
+                resultDiv.style.display = 'none';
+                return;
+            }
+            
+            var result;
+            
+            if (type === 'temperature') {
+                result = units.temperature.convert(fromValue, fromUnit, toUnit);
+            } else {
+                var unitData = units[type];
+                var fromIndex = unitData.units.indexOf(fromUnit);
+                var toIndex = unitData.units.indexOf(toUnit);
+                
+                var baseValue = fromValue / unitData.factors[fromIndex];
+                result = baseValue * unitData.factors[toIndex];
+            }
+            
+            toValueInput.value = result.toFixed(6).replace(/\.?0+$/, '');
+            resultText.innerHTML = fromValue + ' ' + fromUnit + ' = ' + toValueInput.value + ' ' + toUnit;
+            resultDiv.style.display = 'block';
+        }
+        
+        function swapUnits() {
+            var fromUnit = document.getElementById('fromUnit');
+            var toUnit = document.getElementById('toUnit');
+            var fromValue = document.getElementById('fromValue');
+            var toValue = document.getElementById('toValue');
+            
+            var tempUnit = fromUnit.value;
+            fromUnit.value = toUnit.value;
+            toUnit.value = tempUnit;
+            
+            var tempValue = fromValue.value;
+            fromValue.value = toValue.value;
+            toValue.value = tempValue;
+            
+            convert();
+        }
+        
+        updateUnits();
+        loadSidebar();
+    </script>
+</body>
+</html>

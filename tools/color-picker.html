@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>颜色选择器 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .form-group input[type="text"] {
+            width: 200px;
+            padding: 4px 6px;
+            border: 1px solid #666666;
+            font-size: 11px;
+        }
+        
+        .form-group input[type="color"] {
+            width: 50px;
+            height: 30px;
+        }
+        
+        .btn {
+            background-color: #006699;
+            color: #ffffff;
+            padding: 4px 8px;
+            border: 1px solid #004466;
+            cursor: pointer;
+            font-size: 11px;
+            margin-top: 5px;
+        }
+        
+        .btn:hover {
+            background-color: #0088cc;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 3px solid #006699;
+            font-size: 11px;
+            display: none;
+        }
+        
+        #colorPreview {
+            width: 200px;
+            height: 60px;
+            border: 2px solid #999999;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>颜色选择器</h2>
+                    
+                    <div class="form-group">
+                        <label for="colorPicker">选择颜色：</label>
+                        <input type="color" id="colorPicker" value="#006699">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label>颜色预览：</label>
+                        <div id="colorPreview"></div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="hexValue">HEX值：</label>
+                        <input type="text" id="hexValue" readonly>
+                        <button class="btn" onclick="copyToClipboard('hexValue')">复制HEX</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="rgbValue">RGB值：</label>
+                        <input type="text" id="rgbValue" readonly>
+                        <button class="btn" onclick="copyToClipboard('rgbValue')">复制RGB</button>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="hslValue">HSL值：</label>
+                        <input type="text" id="hslValue" readonly>
+                        <button class="btn" onclick="copyToClipboard('hslValue')">复制HSL</button>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        function updateColorValues() {
+            var color = document.getElementById('colorPicker').value;
+            document.getElementById('colorPreview').style.backgroundColor = color;
+            document.getElementById('hexValue').value = color.toUpperCase();
+            
+            var r = parseInt(color.substr(1, 2), 16);
+            var g = parseInt(color.substr(3, 2), 16);
+            var b = parseInt(color.substr(5, 2), 16);
+            document.getElementById('rgbValue').value = 'rgb(' + r + ', ' + g + ', ' + b + ')';
+            
+            var hsl = rgbToHsl(r, g, b);
+            document.getElementById('hslValue').value = 'hsl(' + hsl.h + ', ' + hsl.s + '%, ' + hsl.l + '%)';
+        }
+        
+        function rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            
+            var max = Math.max(r, g, b);
+            var min = Math.min(r, g, b);
+            var h, s, l = (max + min) / 2;
+            
+            if (max === min) {
+                h = s = 0;
+            } else {
+                var d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            
+            return {
+                h: Math.round(h * 360),
+                s: Math.round(s * 100),
+                l: Math.round(l * 100)
+            };
+        }
+        
+        function copyToClipboard(elementId) {
+            var element = document.getElementById(elementId);
+            element.select();
+            alert('已复制到剪贴板！');
+        }
+        
+        updateColorValues();
+        document.getElementById('colorPicker').onchange = updateColorValues;
+        
+        loadSidebar();
+    </script>
+</body>
+</html>

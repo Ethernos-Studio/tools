@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ethernos Tools - 实用小工具</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .main-title {
+            text-align: center;
+            margin-bottom: 20px;
+            padding: 15px;
+            background-color: #f0f0f0;
+            border: 1px solid #999999;
+        }
+        
+        .main-title h1 {
+            margin: 0 0 5px 0;
+            font-size: 20px;
+        }
+        
+        .main-title p {
+            margin: 0;
+            font-size: 12px;
+        }
+        
+        .tool-card {
+            float: left;
+            width: 200px;
+            height: 150px;
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            margin: 10px;
+            padding: 10px;
+        }
+        
+        .tool-card h3 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            border-bottom: 1px solid #333333;
+            padding-bottom: 3px;
+        }
+        
+        .tool-card p {
+            margin: 0 0 10px 0;
+            font-size: 11px;
+            line-height: 1.3;
+            height: 80px;
+            overflow: hidden;
+        }
+        
+        .tool-card a {
+            display: block;
+            background-color: #006699;
+            color: #ffffff;
+            padding: 4px 8px;
+            text-decoration: none;
+            text-align: center;
+            font-size: 11px;
+        }
+        
+        .tool-card a:hover {
+            background-color: #0088cc;
+            text-decoration: underline;
+        }
+        
+        .clearfix {
+            clear: both;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="main-title">
+                    <h1>Ethernos Tools</h1>
+                    <p>简单易用的在线小工具集合，无需安装任何软件</p>
+                </div>
+                
+                <div class="tool-card">
+                    <h3>密码生成器</h3>
+                    <p>生成安全强度高的随机密码，支持自定义长度和字符类型。</p>
+                    <a href="tools/password-generator.html">开始使用</a>
+                </div>
+                
+                <div class="tool-card">
+                    <h3>颜色选择器</h3>
+                    <p>选择颜色并获取对应的HEX、RGB、HSL等格式数值。</p>
+                    <a href="tools/color-picker.html">开始使用</a>
+                </div>
+                
+                <div class="tool-card">
+                    <h3>计算器</h3>
+                    <p>简单易用的在线计算器，支持基本数学运算。</p>
+                    <a href="tools/calculator.html">开始使用</a>
+                </div>
+                
+                <div class="tool-card">
+                    <h3>二维码生成</h3>
+                    <p>将文本或网址快速生成二维码图片。</p>
+                    <a href="tools/qr-generator.html">开始使用</a>
+                </div>
+                
+                <div class="tool-card">
+                    <h3>单位转换</h3>
+                    <p>长度、重量、温度等常用单位的互相转换。</p>
+                    <a href="tools/unit-converter.html">开始使用</a>
+                </div>
+                
+                <div class="clearfix"></div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        var xhr = new XMLHttpRequest();
+        xhr.open('GET', 'bar.html', true);
+        xhr.onreadystatechange = function() {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+            }
+        };
+        xhr.send();
+    </script>
+</body>
+</html>

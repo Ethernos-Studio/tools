@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>二维码生成器 - Ethernos Tools</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: Arial, sans-serif;
+            font-size: 12px;
+        }
+        
+        table {
+            width: 100%;
+            height: 100%;
+            border-collapse: collapse;
+        }
+        
+        td {
+            vertical-align: top;
+            padding: 0;
+        }
+        
+        .sidebar {
+            width: 180px;
+            background-color: #333333;
+            color: #ffffff;
+            height: 100vh;
+        }
+        
+        .main-content {
+            padding: 20px;
+        }
+        
+        .tool-container {
+            background-color: #ffffff;
+            border: 1px solid #999999;
+            padding: 15px;
+            margin-top: 10px;
+        }
+        
+        .tool-container h2 {
+            margin: 0 0 15px 0;
+            font-size: 16px;
+            border-bottom: 2px solid #006699;
+            padding-bottom: 5px;
+        }
+        
+        .form-group {
+            margin-bottom: 10px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 3px;
+            font-weight: bold;
+            font-size: 11px;
+        }
+        
+        .form-group textarea {
+            width: 300px;
+            height: 80px;
+            padding: 4px 6px;
+            border: 1px solid #666666;
+            font-size: 11px;
+            font-family: Arial, sans-serif;
+        }
+        
+        .form-group select {
+            width: 150px;
+            padding: 4px 6px;
+            border: 1px solid #666666;
+            font-size: 11px;
+        }
+        
+        .btn {
+            background-color: #006699;
+            color: #ffffff;
+            padding: 4px 8px;
+            border: 1px solid #004466;
+            cursor: pointer;
+            font-size: 11px;
+            margin-right: 5px;
+        }
+        
+        .btn:hover {
+            background-color: #0088cc;
+        }
+        
+        .btn-secondary {
+            background-color: #666666;
+            border-color: #444444;
+        }
+        
+        .btn-secondary:hover {
+            background-color: #888888;
+        }
+        
+        .result {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: #f0f0f0;
+            border-left: 3px solid #006699;
+            font-size: 11px;
+            display: none;
+        }
+        
+        #qrcode {
+            margin-top: 10px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <table cellpadding="0" cellspacing="0">
+        <tr>
+            <td class="sidebar">
+                <div id="sidebar-container"></div>
+            </td>
+            <td class="main-content">
+                <div class="tool-container">
+                    <h2>二维码生成器</h2>
+                    
+                    <div class="form-group">
+                        <label for="qrText">输入文本或网址：</label>
+                        <textarea id="qrText" rows="4" placeholder="请输入要生成二维码的文本或网址..."></textarea>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="qrSize">二维码尺寸：</label>
+                        <select id="qrSize">
+                            <option value="128">128x128</option>
+                            <option value="256" selected>256x256</option>
+                            <option value="384">384x384</option>
+                            <option value="512">512x512</option>
+                        </select>
+                    </div>
+                    
+                    <button class="btn" onclick="generateQR()">生成二维码</button>
+                    <button class="btn btn-secondary" onclick="downloadQR()" id="downloadBtn" style="display: none;">下载二维码</button>
+                    
+                    <div class="result" id="qrResult">
+                        <strong>生成的二维码：</strong>
+                        <div id="qrcode"></div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+    </table>
+    
+    <script>
+        function loadSidebar() {
+            var xhr = new XMLHttpRequest();
+            xhr.open('GET', '../bar.html', true);
+            xhr.onreadystatechange = function() {
+                if (xhr.readyState === 4 && xhr.status === 200) {
+                    document.getElementById('sidebar-container').innerHTML = xhr.responseText;
+                }
+            };
+            xhr.send();
+        }
+        
+        function generateQR() {
+            var text = document.getElementById('qrText').value.trim();
+            var size = parseInt(document.getElementById('qrSize').value);
+            
+            if (!text) {
+                alert('请输入要生成二维码的文本！');
+                return;
+            }
+            
+            var qrcodeDiv = document.getElementById('qrcode');
+            qrcodeDiv.innerHTML = '';
+            
+            var script = document.createElement('script');
+            script.src = 'https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js';
+            script.onload = function() {
+                new QRCode(qrcodeDiv, {
+                    text: text,
+                    width: size,
+                    height: size,
+                    colorDark: '#000000',
+                    colorLight: '#ffffff',
+                    correctLevel: QRCode.CorrectLevel.H
+                });
+                document.getElementById('qrResult').style.display = 'block';
+                document.getElementById('downloadBtn').style.display = 'inline-block';
+            };
+            document.head.appendChild(script);
+        }
+        
+        function downloadQR() {
+            var canvas = document.getElementById('qrcode').querySelector('canvas');
+            if (canvas) {
+                var link = document.createElement('a');
+                link.download = 'qrcode.png';
+                link.href = canvas.toDataURL();
+                link.click();
+            } else {
+                alert('请先生成二维码！');
+            }
+        }
+        
+        loadSidebar();
+    </script>
+</body>
+</html>
